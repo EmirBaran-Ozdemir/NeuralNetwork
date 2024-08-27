@@ -39,13 +39,13 @@ namespace NNCore {
 			std::vector<std::vector<double>> matrix = m_Weights[layerIndex]->GetMatrixValues();
 			const std::vector<std::unique_ptr<Neuron>>& neuronValues = m_Layers[layerIndex]->GetNeurons();
 			double addedValues = 0.00;
-			
+
 			//! Loop column
 			for (int column = 0; column < numCols; column++)
 			{
 				for (int row = 0; row < numRows; row++)
 				{
-					addedValues += matrix[row][column] + neuronValues[row]->GetActivatedValue();
+					addedValues += matrix[row][column] * neuronValues[row]->GetActivatedValue();
 				}
 				m_Layers[layerIndex + 1]->SetNeuron(column, std::make_unique<Neuron>(addedValues, s_ActivationFunction));
 			}
