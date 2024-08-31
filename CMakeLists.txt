@@ -21,6 +21,10 @@ file(GLOB LAYER_SOURCE_FILES "NeuralNetwork/src/Core/Layer/*.cpp")
 file(GLOB LAYER_HEADER_FILES "NeuralNetwork/src/Core/Layer/*.h")
 file(GLOB UTILS_SOURCE_FILES "NeuralNetwork/src/Core/Utils/*.cpp")
 file(GLOB UTILS_HEADER_FILES "NeuralNetwork/src/Core/Utils/*.h")
+file(GLOB NEURONACTIVATION_SOURCE_FILES "NeuralNetwork/src/Core/NeuronActivation/*.cpp")
+file(GLOB NEURONACTIVATION_HEADER_FILES "NeuralNetwork/src/Core/NeuronActivation/*.h")
+
+add_subdirectory("vendor/fmt")
 
 add_executable(NeuralNetwork
     "NeuralNetwork/src/main.cpp"
@@ -32,7 +36,9 @@ add_executable(NeuralNetwork
     ${LAYER_HEADER_FILES}
     ${UTILS_SOURCE_FILES}
     ${UTILS_HEADER_FILES}
-  )
+    ${NEURONACTIVATION_SOURCE_FILES}
+    ${NEURONACTIVATION_HEADER_FILES}
+ )
     
 set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
 
@@ -45,6 +51,9 @@ endif()
 target_precompile_headers(NeuralNetwork PUBLIC "NeuralNetwork/src/nnpch.h")
 
 target_include_directories(NeuralNetwork PUBLIC "NeuralNetwork/src")
+target_include_directories(NeuralNetwork PUBLIC "vendor/fmt/include")
+
+target_link_libraries(NeuralNetwork PRIVATE fmt::fmt fmt-header-only)
 
 set_target_properties(NeuralNetwork PROPERTIES OUTPUT_NAME "NeuralNetwork")
 

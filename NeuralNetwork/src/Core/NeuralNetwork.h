@@ -1,32 +1,31 @@
 #pragma once
 #include "nnpch.h"
 #include "Layer/Layer.h"
-#include "Utils/Matrix.h"
-#include "ActivationFunction/ActivationFunction.h"
-
+#include "Core/NeuronActivation/NeuronActivation.h"
 
 namespace NNCore {
-
 
 
 	class NeuralNetwork {
 
 	public:
-		NeuralNetwork(const std::vector<int>& topology);
-		void Initialize(std::vector<double> startingValues, bool isWeightsRandomized);
-		void Run();
+		NeuralNetwork(const std::vector<int>& topology, NeuronActivation::ActivationFunction activationFunction);
+		void Initialize(std::vector<double> inputValues, std::vector<double> outputsValues);
+		void Train(std::vector<double> inputValues, std::vector<double> outputValues, int epochs);
+		
 		const std::vector<std::unique_ptr<Layer>>& GetLayers() const { return m_Layers; }
 		const std::vector<std::unique_ptr<Utils::Matrix>>& GetMatrices() const { return m_Weights; }
 		
-		static void SetActivationFunction(ActivationFunction activationFunction) { s_ActivationFunction = activationFunction; }
-		static ActivationFunction GetActivationFunction() { return s_ActivationFunction; }
-		
+	private:
+		void ForwardPropagation();
+		double CalculateCost();
+		void BackwardPropagation();
 	private:
 		std::vector<int> m_Topology;
 		std::vector<std::unique_ptr<Layer>> m_Layers;
 		std::vector<std::unique_ptr<Utils::Matrix>> m_Weights;
-		bool m_FirstRun = true;
-		static ActivationFunction s_ActivationFunction;
-
+		std::vector<double> m_TargetOutputValues;
+		bool m_FirstEpoch = true;
+		NeuronActivation::ActivationFunction m_ActivationFunction;
 	};
 }

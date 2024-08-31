@@ -1,25 +1,25 @@
 #pragma once
 #include "nnpch.h"
 #include "Neuron.h"
-
+#include "Core/NeuronActivation/NeuronActivation.h"
 namespace NNCore {
 
 
-	Neuron::Neuron(double inputValue, ActivationFunction activationFunction)
-		: m_InputValue(inputValue), m_ActivatedValue(0.0), m_DerivatedValue(0.0)
+	Neuron::Neuron(double inputValue, NeuronActivation::ActivationFunction activationFunction)
+		: m_InputValue(inputValue), m_ActivatedValue(0.0), m_DerivatedValue(0.0), m_ActivationFunction(activationFunction)
 	{
-		Activate(activationFunction);
-		Derive(activationFunction);
+		Activate();
+		Derive();
 	}
 
-	void Neuron::Activate(ActivationFunction activationFunction)
+	void Neuron::Activate()
 	{
-		switch (activationFunction)
+		switch (m_ActivationFunction)
 		{
-		case ActivationFunction::FastSigmoid:
+		case NeuronActivation::ActivationFunction::FastSigmoid:
 			m_ActivatedValue = m_InputValue / (1 + abs(m_InputValue));
 			break;
-		case ActivationFunction::ReLU:
+		case NeuronActivation::ActivationFunction::ReLU:
 			m_ActivatedValue = m_InputValue > 0 ? m_InputValue : 0;
 			break;
 		default:
@@ -27,14 +27,14 @@ namespace NNCore {
 			break;
 		}
 	}
-	void Neuron::Derive(ActivationFunction activationFunction)
+	void Neuron::Derive()
 	{
-		switch (activationFunction)
+		switch (m_ActivationFunction)
 		{
-		case ActivationFunction::FastSigmoid:
+		case NeuronActivation::ActivationFunction::FastSigmoid:
 			m_DerivatedValue = m_ActivatedValue * (1 - m_ActivatedValue);
 			break;
-		case ActivationFunction::ReLU:
+		case NeuronActivation::ActivationFunction::ReLU:
 			m_DerivatedValue = m_ActivatedValue > 0 ? 1 : 0;
 			break;
 		default:

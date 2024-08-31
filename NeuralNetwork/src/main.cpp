@@ -1,29 +1,39 @@
 #include "nnpch.h"
 
 #include "Core/Neuron/Neuron.h"
-#include <Core/NeuralNetwork.h>
-#include <Core/Utils/Matrix.h>
+#include "Core/NeuralNetwork.h"
+#include "Core/NeuronActivation/NeuronActivation.h"
 
 int main(int argc, char* argv[])
 {
-	Utils::Random::Init();
-	NNCore::NeuralNetwork::SetActivationFunction(NNCore::ActivationFunction::FastSigmoid);
-	NNCore::ActivationFunction activationFunction = NNCore::NeuralNetwork::GetActivationFunction();
+	try {
 
-	std::vector<int> topology = { 4,3,5,8 };
-	NNCore::NeuralNetwork* myNN = new NNCore::NeuralNetwork(topology);
-	myNN->Initialize({ 0.5,0.2,0.4,0.1 },true);
-	myNN->Run();
-	std::cout << static_cast<std::string>(*myNN->GetMatrices()[0].get()) << std::endl;
-	auto& neuronsInit = myNN->GetLayers()[0].get()->GetNeurons();
-	for (auto& neuron : neuronsInit)
-	{
-		std::cout << neuron->GetActivatedValue() << std::endl;
+		Utils::Random::Init();
+		NNCore::NeuronActivation* neuronActivation = new NNCore::NeuronActivation(NNCore::NeuronActivation::ActivationFunction::FastSigmoid);
+		NNCore::NeuronActivation::ActivationFunction activationFunction = neuronActivation->GetActivationFunction();
+
+		std::vector<double> inputValues = { 0.5,0.2,0.4,0.1 };
+		std::vector<double> outputValues = { 0.00,0.00,0.00,0.00,1.00 };
+		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 5, static_cast<int>(outputValues.size()) };
+		auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
+		myNN->Train(inputValues, outputValues, 1);
+		std::cout << static_cast<std::string>(*myNN->GetMatrices()[0].get()) << std::endl;
+
+		for(auto& layer : myNN->GetLayers())
+		{
+			auto& neurons = layer.get()->GetNeurons();
+			for(auto& neuron : neurons)
+			{
+				std::cout << neuron->GetActivatedValue() << std::endl;
+			}
+			std::cout << std::endl;
+		}
 	}
-	auto& neurons = myNN->GetLayers()[1].get()->GetNeurons();
-	for (auto& neuron : neurons)
+
+	catch(std::invalid_argument& err)
 	{
-		std::cout << neuron->GetActivatedValue() << std::endl;
+		std::cerr << err.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 	return 0;
 }
