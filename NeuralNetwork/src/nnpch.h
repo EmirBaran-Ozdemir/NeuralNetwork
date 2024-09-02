@@ -1,3 +1,17 @@
+#pragma once
+
+
+#ifdef _WIN32
+#ifdef BUILDING_NEURALNETWORK
+#define NN_API __declspec(dllexport)
+#else
+#define NN_API __declspec(dllimport)
+#endif
+#else
+#define NN_API
+#endif
+
+
 #include <iostream>
 #include <math.h>
 #include <vector>
@@ -5,6 +19,5 @@
 #include <ostream>
 #include <string>
 #include <math.h>
-
 // Core
 #include "Core/Utils/Core.h"

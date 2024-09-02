@@ -67,6 +67,7 @@ namespace NNCore {
 		}
 	}
 
+
 	double NeuralNetwork::CalculateCost()
 	{
 		std::unique_ptr<Layer>& outputLayer = m_Layers.back();
@@ -85,6 +86,17 @@ namespace NNCore {
 
 	void NeuralNetwork::BackwardPropagation()
 	{
+		auto& outputLayer = m_Layers.back();
+		std::vector<double> outputDeltas(outputLayer->GetSize());
+		auto& neurons = outputLayer.get()->GetNeurons();
 
+		for(size_t neuronIndex = 0; neuronIndex < outputLayer.get()->GetSize(); neuronIndex++)
+		{
+			//! Calculate deltas
+			double outputValue = outputLayer.get()->GetNeurons()[neuronIndex]->GetActivatedValue();
+			double targetValue = m_TargetOutputValues[neuronIndex];
+			double delta = (outputValue - targetValue) * NeuronActivation::Derivate(outputValue, m_ActivationFunction);
+			outputDeltas[neuronIndex] = delta;
+		}
 	}
 }

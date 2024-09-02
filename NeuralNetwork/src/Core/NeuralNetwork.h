@@ -1,3 +1,4 @@
+
 #pragma once
 #include "nnpch.h"
 #include "Layer/Layer.h"
@@ -6,16 +7,19 @@
 namespace NNCore {
 
 
-	class NeuralNetwork {
+	class NN_API NeuralNetwork {
 
 	public:
 		NeuralNetwork(const std::vector<int>& topology, NeuronActivation::ActivationFunction activationFunction);
-		void Initialize(std::vector<double> inputValues, std::vector<double> outputsValues);
+		NeuralNetwork(const NeuralNetwork&) = delete;
+		NeuralNetwork& operator=(const NeuralNetwork&) = delete;
+		~NeuralNetwork() = default;
+
 		void Train(std::vector<double> inputValues, std::vector<double> outputValues, int epochs);
-		
+
 		const std::vector<std::unique_ptr<Layer>>& GetLayers() const { return m_Layers; }
 		const std::vector<std::unique_ptr<Utils::Matrix>>& GetMatrices() const { return m_Weights; }
-		
+
 	private:
 		void ForwardPropagation();
 		double CalculateCost();

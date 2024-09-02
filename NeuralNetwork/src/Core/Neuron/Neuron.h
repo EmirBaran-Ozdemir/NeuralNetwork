@@ -16,10 +16,6 @@ namespace NNCore {
 		double GetBaseValue() const { return m_InputValue; }
 		double GetActivatedValue() const { return m_ActivatedValue; }
 		double GetDerivatedValue() const { return m_DerivatedValue; }
-
-	private:
-		void Activate();
-		void Derive();
 	
 	private:
 		double m_InputValue; // This value will be set by the user

@@ -1,6 +1,5 @@
-#include "nnpch.h"
-
-#include "Core/Neuron/Neuron.h"
+#pragma 
+#include "nnvpch.h"
 #include "Core/NeuralNetwork.h"
 #include "Core/NeuronActivation/NeuronActivation.h"
 
@@ -9,7 +8,8 @@ int main(int argc, char* argv[])
 	try {
 
 		Utils::Random::Init();
-		NNCore::NeuronActivation* neuronActivation = new NNCore::NeuronActivation(NNCore::NeuronActivation::ActivationFunction::FastSigmoid);
+		NNCore::NeuronActivation* neuronActivation = new NNCore::NeuronActivation();
+		neuronActivation->SetActivationFunction(NNCore::NeuronActivation::ActivationFunction::FastSigmoid);
 		NNCore::NeuronActivation::ActivationFunction activationFunction = neuronActivation->GetActivationFunction();
 
 		std::vector<double> inputValues = { 0.5,0.2,0.4,0.1 };

@@ -5,6 +5,8 @@ namespace Utils {
 	class Matrix {
 	public:
 		Matrix(int numRows, int numCols, bool isRandomized);
+		Matrix(const Matrix&) = delete;
+		Matrix& operator=(const Matrix&) = delete;
 
 		void Transpose();
 
@@ -27,6 +29,7 @@ namespace Utils {
 			}
 			return str;
 		}
+
 	private:
 		size_t m_NumRows, m_NumCols;
 		std::vector<std::vector<double>> m_Values;

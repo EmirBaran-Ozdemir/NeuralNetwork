@@ -1,9 +1,9 @@
 #pragma once
 #include <random>
-
+#include <limits>
 namespace Utils
 {
-	class Random
+	class NN_API Random
 	{
 	public:
 		static void Init()

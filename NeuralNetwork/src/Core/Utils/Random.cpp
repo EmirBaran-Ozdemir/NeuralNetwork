@@ -1,3 +1,4 @@
+#pragma once
 #include "Random.h"
 
 namespace Utils
