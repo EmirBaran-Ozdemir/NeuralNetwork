@@ -16,7 +16,7 @@ namespace NNCore {
 		{
 		case NeuronActivation::ActivationFunction::Null:
 			THROW_ERROR("Activation function is not defined");
-			break;
+			return -1;
 		case NeuronActivation::ActivationFunction::FastSigmoid:
 			return value / (1 + abs(value));
 		case NeuronActivation::ActivationFunction::Sigmoid:
@@ -25,6 +25,7 @@ namespace NNCore {
 			return value > 0 ? value : 0;
 		default:
 			THROW_ERROR("Activation function is not defined");
+			return -1;
 		}
 	}
 
@@ -33,7 +34,7 @@ namespace NNCore {
 		{
 		case NeuronActivation::ActivationFunction::Null:
 			THROW_ERROR("Activation function is not defined");
-			break;
+			return -1;
 		case NeuronActivation::ActivationFunction::Sigmoid:
 			return value * (1 - value);
 		case NeuronActivation::ActivationFunction::ReLU:
@@ -42,6 +43,7 @@ namespace NNCore {
 			return 1.0 / std::pow((1.0 + std::abs(value)), 2);
 		default:
 			THROW_ERROR("Activation function is not defined");
+			return -1;
 		}
 	}
 }

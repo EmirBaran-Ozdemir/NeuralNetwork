@@ -2,9 +2,14 @@
 #include "nnvpch.h"
 #include "Core/NeuralNetwork.h"
 #include "Core/NeuronActivation/NeuronActivation.h"
+#include "Visualizer.h"
+#include <windows.h>
 
-int main(int argc, char* argv[])
+// Entry point for a Windows application
+int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+
 	try {
 
 		Utils::Random::Init();
@@ -16,7 +21,7 @@ int main(int argc, char* argv[])
 		std::vector<double> outputValues = { 0.00,0.00,0.00,0.00,1.00 };
 		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 5, static_cast<int>(outputValues.size()) };
 		auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
-		myNN->Train(inputValues, outputValues, 1);
+		myNN->Train(inputValues, outputValues, 1); //todo Change this to step 
 		std::cout << static_cast<std::string>(*myNN->GetMatrices()[0].get()) << std::endl;
 
 		for(auto& layer : myNN->GetLayers())
@@ -28,6 +33,22 @@ int main(int argc, char* argv[])
 			}
 			std::cout << std::endl;
 		}
+
+
+	if(SUCCEEDED(CoInitialize(NULL)))
+	{
+		{
+			NNVisualizer::Visualizer app;
+
+			if(SUCCEEDED(app.Initialize()))
+			{
+				app.SetNN(std::move(myNN));
+
+				app.RunMessageLoop();
+			}
+		}
+		CoUninitialize();
+	}
 	}
 
 	catch(std::invalid_argument& err)

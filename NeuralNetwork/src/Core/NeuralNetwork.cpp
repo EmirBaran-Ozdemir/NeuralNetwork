@@ -16,10 +16,7 @@ namespace NNCore {
 		for(size_t i = 0; i < m_Layers.size() - 1; ++i) {
 			m_Weights.emplace_back(std::make_unique<Utils::Matrix>(m_Layers[i]->GetSize(), m_Layers[i + 1]->GetSize(), true));
 		}
-	
-
 	}
-
 
 	void NeuralNetwork::Train(std::vector<double> inputValues, std::vector<double> outputValues, int epochs)
 	{

@@ -1,5 +1,6 @@
 #pragma once
 #include "nnvpch.h"
+#include "Core/NeuralNetwork.h"
 
 namespace NNVisualizer {
 
@@ -8,44 +9,38 @@ namespace NNVisualizer {
 	public:
 		Visualizer();
 		~Visualizer();
-
-		// Register the window class and call methods for instantiating drawing resources
 		HRESULT Initialize();
-
-		// Process and dispatch messages
 		void RunMessageLoop();
+		void SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork);
 
 	private:
-		// Initialize device-independent resources.
 		HRESULT CreateDeviceIndependentResources();
-
-		// Initialize device-dependent resources.
 		HRESULT CreateDeviceResources();
-
-		// Release device-dependent resource.
 		void DiscardDeviceResources();
-
-		// Draw content.
 		HRESULT OnRender();
-
-		// Resize the render target.
 		void OnResize(
 			UINT width,
 			UINT height
 		);
-
-		// The windows procedure.
 		static LRESULT CALLBACK WndProc(
 			HWND hWnd,
 			UINT message,
 			WPARAM wParam,
 			LPARAM lParam
 		);
+		void DrawNode(D2D1_POINT_2F position, float radius, double value);
+		void DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight);
+		void LoopNN();
 	private:
 		HWND m_hwnd;
-		ID2D1Factory* m_pDirect2dFactory;
-		ID2D1HwndRenderTarget* m_pRenderTarget;
-		ID2D1SolidColorBrush* m_pLightSlateGrayBrush;
-		ID2D1SolidColorBrush* m_pCornflowerBlueBrush;
+		ID2D1Factory* m_Direct2dFactory;
+		IDWriteFactory* m_DWriteFactory;
+		ID2D1HwndRenderTarget* m_RenderTarget;
+		IDWriteTextFormat* m_TextFormat;
+		ID2D1SolidColorBrush* m_LooseWeightBrush;
+		ID2D1SolidColorBrush* m_MediumWeightBrush;
+		ID2D1SolidColorBrush* m_TightWeightBrush;
+		//! Render Data
+		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 	};
 }

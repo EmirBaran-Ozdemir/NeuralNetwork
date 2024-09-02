@@ -5,7 +5,7 @@
 
 namespace NNCore {
 
-	class Layer {
+	class NN_API Layer {
 	public:
 		Layer(size_t size, NeuronActivation::ActivationFunction activationFunction);
 		Layer(const Layer&) = delete;

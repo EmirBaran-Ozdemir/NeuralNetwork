@@ -24,7 +24,7 @@ file(GLOB VISUALIZER_SOURCE_FILES "src/*.cpp")
 add_executable(NNVisualizer
     src/main.cpp
     ${VISUALIZER_SOURCE_FILES}
-"src/NNVisualizer/Utils/Utilities.h")
+ "src/Visualizer.h" "src/Visualizer.cpp" "src/NNVisualizer/Utils/Utilities.h")
 
 # Link against NeuralNetwork and other necessary libraries
 target_link_libraries(NNVisualizer
