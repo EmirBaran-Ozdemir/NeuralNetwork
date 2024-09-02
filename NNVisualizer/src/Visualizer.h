@@ -40,6 +40,8 @@ namespace NNVisualizer {
 		ID2D1SolidColorBrush* m_LooseWeightBrush;
 		ID2D1SolidColorBrush* m_MediumWeightBrush;
 		ID2D1SolidColorBrush* m_TightWeightBrush;
+		int m_ViewportHeight;
+		int m_ViewportWidth;
 		//! Render Data
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 	};

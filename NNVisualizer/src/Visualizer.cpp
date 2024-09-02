@@ -71,14 +71,15 @@ namespace NNVisualizer {
 				// Because the SetWindowPos function takes its size in pixels, we
 				// obtain the window's DPI, and use it to scale the window size.
 				float dpi = GetDpiForWindow(m_hwnd);
-
+				m_ViewportWidth = static_cast<int>(ceil(1440.f * dpi / 96.f));
+				m_ViewportHeight = static_cast<int>(ceil(820.f * dpi / 96.f));
 				SetWindowPos(
 					m_hwnd,
 					NULL,
 					NULL,
 					NULL,
-					static_cast<int>(ceil(1440.f * dpi / 96.f)),
-					static_cast<int>(ceil(820.f * dpi / 96.f)),
+					m_ViewportHeight,
+					m_ViewportHeight,
 					SWP_NOMOVE);
 				ShowWindow(m_hwnd, SW_SHOWNORMAL);
 				UpdateWindow(m_hwnd);
@@ -164,16 +165,39 @@ namespace NNVisualizer {
 		// Adjust brush color or thickness based on weight if needed
 		// Example: m_RenderTarget->CreateSolidColorBrush(...);
 		// Draw line representing the weight
-		m_RenderTarget->DrawLine(start, end, m_LooseWeightBrush, weight);
+		if(weight < 0.33)
+		{
+			m_RenderTarget->DrawLine(start, end, m_LooseWeightBrush, weight);
+		}
+		else if(weight < 0.66)
+		{
+			m_RenderTarget->DrawLine(start, end, m_MediumWeightBrush, weight);
+
+		}
+		else
+		{
+			m_RenderTarget->DrawLine(start, end, m_TightWeightBrush, weight);
+
+		}
 	}
 
 	void Visualizer::LoopNN()
 	{
 		const auto& layers = m_NeuralNetwork->GetLayers();
-		const auto& weights = m_NeuralNetwork->GetMatrices();
+		const auto& weights = m_NeuralNetwork->GetWeights();
+		size_t largestLayerSize = 0;
 
+		for(size_t i = 0; i < layers.size(); ++i) {
+			size_t layerSize = layers[i]->GetSize();
+
+			if(layerSize > largestLayerSize) {
+				largestLayerSize = layerSize;
+			}
+		}
 		// Define layout parameters
 		float nodeRadius = 10.0f;
+		//float verticalSpacing = static_cast<float> (m_ViewportWidth / largestLayerSize);
+		//float horizontalSpacing = static_cast<float> (m_ViewportWidth / layers.size());
 		float verticalSpacing = 50.0f;
 		float horizontalSpacing = 100.0f;
 
@@ -181,12 +205,12 @@ namespace NNVisualizer {
 		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
 		{
 			const auto& layer = layers[layerIndex];
-			float yOffset = 20.0f + layerIndex * verticalSpacing;
+			float xOffset = 20.0f + layerIndex * horizontalSpacing;
 
 			// Draw each neuron in the layer
 			for(size_t neuronIndex = 0; neuronIndex < layer->GetSize(); ++neuronIndex)
 			{
-				float xOffset = 20.0f + neuronIndex * horizontalSpacing;
+				float yOffset = 20.0f + neuronIndex * verticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
 				double neuronValue = layer->GetNeurons()[neuronIndex]->GetActivatedValue();
@@ -202,13 +226,13 @@ namespace NNVisualizer {
 				// Draw weights between current layer and next layer
 				for(size_t neuronIndex = 0; neuronIndex < layer->GetSize(); ++neuronIndex)
 				{
-					float xOffsetStart = 20.0f + neuronIndex * horizontalSpacing;
-					D2D1_POINT_2F start = D2D1::Point2F(xOffsetStart, yOffset);
+					float yOffsetStart = 20.0f + neuronIndex * verticalSpacing;
+					D2D1_POINT_2F start = D2D1::Point2F(xOffset, yOffsetStart);
 
 					for(size_t nextNeuronIndex = 0; nextNeuronIndex < nextLayer->GetSize(); ++nextNeuronIndex)
 					{
-						float xOffsetEnd = 20.0f + nextNeuronIndex * horizontalSpacing;
-						D2D1_POINT_2F end = D2D1::Point2F(xOffsetEnd, yOffset + verticalSpacing);
+						float yOffsetEnd = 20.0f + nextNeuronIndex * verticalSpacing;
+						D2D1_POINT_2F end = D2D1::Point2F(xOffset + horizontalSpacing, yOffsetEnd );
 
 						// Fetch the weight from the matrix
 						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex); // Assumed method to get weight

@@ -18,7 +18,7 @@ namespace NNCore {
 		void Train(std::vector<double> inputValues, std::vector<double> outputValues, int epochs);
 
 		const std::vector<std::unique_ptr<Layer>>& GetLayers() const { return m_Layers; }
-		const std::vector<std::unique_ptr<Utils::Matrix>>& GetMatrices() const { return m_Weights; }
+		const std::vector<std::unique_ptr<Utils::Matrix>>& GetWeights() const { return m_Weights; }
 
 	private:
 		void ForwardPropagation();

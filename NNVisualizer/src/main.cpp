@@ -22,7 +22,7 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
 		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 5, static_cast<int>(outputValues.size()) };
 		auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
 		myNN->Train(inputValues, outputValues, 1); //todo Change this to step 
-		std::cout << static_cast<std::string>(*myNN->GetMatrices()[0].get()) << std::endl;
+		std::cout << static_cast<std::string>(*myNN->GetWeights()[0].get()) << std::endl;
 
 		for(auto& layer : myNN->GetLayers())
 		{
