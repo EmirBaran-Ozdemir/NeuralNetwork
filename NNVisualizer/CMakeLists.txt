@@ -16,6 +16,7 @@ include_directories(${DIRECTX_SDK_DIR}/Include)
 link_directories(${DIRECTX_SDK_DIR}/Lib/x64)
 
 # Include directories for the NeuralNetwork project
+include_directories(${CMAKE_SOURCE_DIR}/NNVisualizer/src)
 include_directories(${CMAKE_SOURCE_DIR}/NeuralNetwork/src)
 include_directories(${CMAKE_SOURCE_DIR}/NeuralNetwork/vendor/fmt/include)
 
@@ -24,7 +25,7 @@ file(GLOB VISUALIZER_SOURCE_FILES "src/*.cpp")
 add_executable(NNVisualizer
     src/main.cpp
     ${VISUALIZER_SOURCE_FILES}
- "src/Visualizer.h" "src/Visualizer.cpp" "src/NNVisualizer/Utils/Utilities.h")
+ "src/NNVisualizer/Visualizer.h" "src/NNVisualizer/Visualizer.cpp" "src/NNVisualizer/Utils/Utilities.h"  "src/NNVisualizer/Renderer/Camera.h" "src/NNVisualizer/Renderer/Camera.cpp")
 
 # Link against NeuralNetwork and other necessary libraries
 target_link_libraries(NNVisualizer

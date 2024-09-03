@@ -10,8 +10,11 @@ namespace NNVisualizer {
 		m_RenderTarget(NULL),
 		m_LooseWeightBrush(NULL),
 		m_MediumWeightBrush(NULL),
-		m_TightWeightBrush(NULL)
-	{}
+		m_TightWeightBrush(NULL),
+		m_zoomFactor(1.0f)
+	{
+		m_Camera = new Renderer::Camera(1440.f, 820.f);
+	}
 
 	Visualizer::~Visualizer()
 	{
@@ -25,11 +28,20 @@ namespace NNVisualizer {
 	}
 	HRESULT Visualizer::Initialize()
 	{
-		HRESULT hr;
+		HRESULT hr = S_OK;
 
-		// Initialize device-independent resources, such
-		// as the Direct2D factory.
-		hr = CreateDeviceIndependentResources();
+		// Initialize device-independent resources, such as the Direct2D factory.
+		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_Direct2dFactory);
+
+		if(SUCCEEDED(hr))
+		{
+			// Create a DirectWrite factory.
+			hr = DWriteCreateFactory(
+				DWRITE_FACTORY_TYPE_SHARED,
+				__uuidof(IDWriteFactory),
+				reinterpret_cast<IUnknown**>(&m_DWriteFactory)
+			);
+		}
 
 		if(SUCCEEDED(hr))
 		{
@@ -42,17 +54,12 @@ namespace NNVisualizer {
 			wcex.hInstance = HINST_THISCOMPONENT;
 			wcex.hbrBackground = NULL;
 			wcex.lpszMenuName = NULL;
-			wcex.hCursor = LoadCursor(NULL, IDI_APPLICATION);
+			wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 			wcex.lpszClassName = "D2DVisualizer";
 
 			RegisterClassEx(&wcex);
 
-			// In terms of using the correct DPI, to create a window at a specific size
-			// like this, the procedure is to first create the window hidden. Then we get
-			// the actual DPI from the HWND (which will be assigned by whichever monitor
-			// the window is created on). Then we use SetWindowPos to resize it to the
-			// correct DPI-scaled size, then we use ShowWindow to show it.
-
+			// Create the window hidden initially.
 			m_hwnd = CreateWindow(
 				"D2DVisualizer",
 				"NNVisualizer",
@@ -64,85 +71,87 @@ namespace NNVisualizer {
 				NULL,
 				NULL,
 				HINST_THISCOMPONENT,
-				this);
+				this
+			);
 
 			if(m_hwnd)
 			{
-				// Because the SetWindowPos function takes its size in pixels, we
-				// obtain the window's DPI, and use it to scale the window size.
+				// Adjust window size based on DPI.
 				float dpi = GetDpiForWindow(m_hwnd);
 				m_ViewportWidth = static_cast<int>(ceil(1440.f * dpi / 96.f));
 				m_ViewportHeight = static_cast<int>(ceil(820.f * dpi / 96.f));
 				SetWindowPos(
 					m_hwnd,
 					NULL,
-					NULL,
-					NULL,
+					0, 0,
+					m_ViewportWidth,
 					m_ViewportHeight,
-					m_ViewportHeight,
-					SWP_NOMOVE);
+					SWP_NOMOVE
+				);
+
+				// Show and update the window.
 				ShowWindow(m_hwnd, SW_SHOWNORMAL);
 				UpdateWindow(m_hwnd);
+
+				// Invalidate the client area to trigger a WM_PAINT message.
+				InvalidateRect(m_hwnd, NULL, FALSE);
 			}
-		}
-
-		return hr;
-	}
-
-	HRESULT Visualizer::OnRender()
-	{
-		HRESULT hr = S_OK;
-
-		hr = CreateDeviceResources();
-		if(SUCCEEDED(hr))
-		{
-			m_RenderTarget->BeginDraw();
-			m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-			D2D1_SIZE_F rtSize = m_RenderTarget->GetSize();
-			// Draw a grid background.
-			int width = static_cast<int>(rtSize.width);
-			int height = static_cast<int>(rtSize.height);
-
-			//this->DrawNode();
-			if(m_NeuralNetwork != nullptr)
+			else
 			{
-				LoopNN();
-
+				hr = E_FAIL;
 			}
-			hr = m_RenderTarget->EndDraw();
 		}
-		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_Direct2dFactory);
 
-		if(SUCCEEDED(hr))
-		{
-			// Create a DirectWrite factory.
-			hr = DWriteCreateFactory(
-				DWRITE_FACTORY_TYPE_SHARED,
-				__uuidof(IDWriteFactory),
-				reinterpret_cast<IUnknown**>(&m_DWriteFactory)
-			);
-		}
-		if(hr == D2DERR_RECREATE_TARGET)
-		{
-			hr = S_OK;
-			DiscardDeviceResources();
+		return hr;
+	}
+
+	HRESULT Visualizer::OnRender() {
+		HRESULT hr = CreateDeviceResources();
+		if(SUCCEEDED(hr)) {
+			m_RenderTarget->BeginDraw();
+			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+
+			// Apply camera transformation
+			D2D1_MATRIX_4X4_F viewMatrix = m_Camera->GetViewMatrix();
+			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
+
+			// Render logic here
+			if(m_NeuralNetwork != nullptr) {
+				LoopNN();
+			}
+
+			hr = m_RenderTarget->EndDraw();
+			if(hr == D2DERR_RECREATE_TARGET) {
+				hr = S_OK;
+				DiscardDeviceResources();
+			}
 		}
 		return hr;
 	}
-	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value)
-	{
-		// Draw circular node
+
+
+	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value) {
+		// Check if the node is within the camera's viewport
+		// Only draw nodes within the viewport
+		if(position.x < -m_Camera->GetPosition().x || position.x > m_ViewportWidth - m_Camera->GetPosition().x ||
+			position.y < -m_Camera->GetPosition().y || position.y > m_ViewportHeight - m_Camera->GetPosition().y) {
+			return;
+		}
+
+		// Apply zoom factor to position and radius
+		position.x *= m_zoomFactor;
+		position.y *= m_zoomFactor;
+		radius *= m_zoomFactor;
+
 		D2D1_ELLIPSE ellipse = D2D1::Ellipse(position, radius, radius);
 		m_RenderTarget->DrawEllipse(&ellipse, m_LooseWeightBrush);
 
-		// Convert the value to a wstring
+		// Draw the text
 		std::wstringstream wss;
 		wss.precision(2);
 		wss << std::fixed << value;
 		std::wstring valueStr = wss.str();
 
-		// Define a rectangle where the text will be drawn
 		D2D1_RECT_F layoutRect = D2D1::RectF(
 			position.x - radius,
 			position.y - radius,
@@ -150,7 +159,6 @@ namespace NNVisualizer {
 			position.y + radius
 		);
 
-		// Draw the text inside the ellipse
 		m_RenderTarget->DrawText(
 			valueStr.c_str(),
 			static_cast<UINT32>(valueStr.size()),
@@ -160,26 +168,49 @@ namespace NNVisualizer {
 		);
 	}
 
+	// Additional methods to move the camera
+	void Visualizer::MoveCameraLeft(float distance) {
+		m_Camera->MoveLeft(distance);
+		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
+
+	void Visualizer::MoveCameraRight(float distance) {
+		m_Camera->MoveRight(distance);
+		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
+	void Visualizer::MoveCameraUp(float distance) {
+		m_Camera->MoveUp(distance);
+		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
+
+	void Visualizer::MoveCameraDown(float distance) {
+		m_Camera->MoveDown(distance);
+		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
+
+
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight)
 	{
-		// Adjust brush color or thickness based on weight if needed
-		// Example: m_RenderTarget->CreateSolidColorBrush(...);
-		// Draw line representing the weight
+		// Apply zoom factor to line start and end points
+		start.x *= m_zoomFactor;
+		start.y *= m_zoomFactor;
+		end.x *= m_zoomFactor;
+		end.y *= m_zoomFactor;
+
 		if(weight < 0.33)
 		{
-			m_RenderTarget->DrawLine(start, end, m_LooseWeightBrush, weight);
+			m_RenderTarget->DrawLine(start, end, m_LooseWeightBrush, 0.5f * m_zoomFactor);
 		}
 		else if(weight < 0.66)
 		{
-			m_RenderTarget->DrawLine(start, end, m_MediumWeightBrush, weight);
-
+			m_RenderTarget->DrawLine(start, end, m_MediumWeightBrush, 0.5f * m_zoomFactor);
 		}
 		else
 		{
-			m_RenderTarget->DrawLine(start, end, m_TightWeightBrush, weight);
-
+			m_RenderTarget->DrawLine(start, end, m_TightWeightBrush, 0.5f * m_zoomFactor);
 		}
 	}
+
 
 	void Visualizer::LoopNN()
 	{
@@ -187,19 +218,18 @@ namespace NNVisualizer {
 		const auto& weights = m_NeuralNetwork->GetWeights();
 		size_t largestLayerSize = 0;
 
-		for(size_t i = 0; i < layers.size(); ++i) {
-			size_t layerSize = layers[i]->GetSize();
-
-			if(layerSize > largestLayerSize) {
-				largestLayerSize = layerSize;
+		for(const auto& layer : layers)
+		{
+			if(layer->GetSize() > largestLayerSize)
+			{
+				largestLayerSize = layer->GetSize();
 			}
 		}
-		// Define layout parameters
-		float nodeRadius = 10.0f;
-		//float verticalSpacing = static_cast<float> (m_ViewportWidth / largestLayerSize);
-		//float horizontalSpacing = static_cast<float> (m_ViewportWidth / layers.size());
-		float verticalSpacing = 50.0f;
-		float horizontalSpacing = 100.0f;
+
+		float nodeRadius = std::max(10.0f, m_ViewportHeight / 8.0f);
+		nodeRadius = std::min(nodeRadius, m_ViewportHeight / 48.0f);
+		float verticalSpacing = std::max(10.0f, static_cast<float>(m_ViewportHeight / (largestLayerSize + 1)));
+		float horizontalSpacing = std::max(20.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 
 		// Loop through each layer to draw nodes
 		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
@@ -207,7 +237,6 @@ namespace NNVisualizer {
 			const auto& layer = layers[layerIndex];
 			float xOffset = 20.0f + layerIndex * horizontalSpacing;
 
-			// Draw each neuron in the layer
 			for(size_t neuronIndex = 0; neuronIndex < layer->GetSize(); ++neuronIndex)
 			{
 				float yOffset = 20.0f + neuronIndex * verticalSpacing;
@@ -217,25 +246,22 @@ namespace NNVisualizer {
 				DrawNode(neuronPosition, nodeRadius, neuronValue);
 			}
 
-			// Draw weights to the next layer if it exists
 			if(layerIndex < layers.size() - 1)
 			{
 				const auto& nextLayer = layers[layerIndex + 1];
-				const auto& weightMatrix = weights[layerIndex]; // Matrix that connects current layer to next
+				const auto& weightMatrix = weights[layerIndex];
 
-				// Draw weights between current layer and next layer
 				for(size_t neuronIndex = 0; neuronIndex < layer->GetSize(); ++neuronIndex)
 				{
 					float yOffsetStart = 20.0f + neuronIndex * verticalSpacing;
-					D2D1_POINT_2F start = D2D1::Point2F(xOffset, yOffsetStart);
+					D2D1_POINT_2F start = D2D1::Point2F(xOffset + nodeRadius, yOffsetStart);
 
 					for(size_t nextNeuronIndex = 0; nextNeuronIndex < nextLayer->GetSize(); ++nextNeuronIndex)
 					{
 						float yOffsetEnd = 20.0f + nextNeuronIndex * verticalSpacing;
-						D2D1_POINT_2F end = D2D1::Point2F(xOffset + horizontalSpacing, yOffsetEnd );
+						D2D1_POINT_2F end = D2D1::Point2F(xOffset + horizontalSpacing - nodeRadius, yOffsetEnd);
 
-						// Fetch the weight from the matrix
-						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex); // Assumed method to get weight
+						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex);
 						DrawWeight(start, end, static_cast<float>(weight));
 					}
 				}
@@ -244,9 +270,22 @@ namespace NNVisualizer {
 	}
 
 
+	void Visualizer::ZoomIn()
+	{
+		m_zoomFactor *= 1.1f; // Increase zoom factor by 10%
+		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
+
+	void Visualizer::ZoomOut()
+	{
+		m_zoomFactor /= 1.1f; // Decrease zoom factor by 10%
+		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
 	void Visualizer::SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork)
 	{
 		m_NeuralNetwork = std::move(neuralNetwork);
+		UpdateWindow(m_hwnd);
+		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
 
 	void Visualizer::RunMessageLoop()
@@ -259,6 +298,7 @@ namespace NNVisualizer {
 			DispatchMessage(&msg);
 		}
 	}
+
 	HRESULT Visualizer::CreateDeviceIndependentResources()
 	{
 		HRESULT hr = S_OK;
@@ -299,28 +339,29 @@ namespace NNVisualizer {
 
 			if(SUCCEEDED(hr))
 			{
-				// Create a gray brush.
 				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF::LimeGreen),
+					D2D1::ColorF(D2D1::ColorF::LightBlue),
 					&m_LooseWeightBrush
 				);
+				if(FAILED(hr)) { OutputDebugString("Failed to create LooseWeightBrush\n"); }
 			}
 			if(SUCCEEDED(hr))
 			{
-				// Create a gray brush.
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF::Yellow),
 					&m_MediumWeightBrush
 				);
+				if(FAILED(hr)) { OutputDebugString("Failed to create MediumWeightBrush\n"); }
 			}
 			if(SUCCEEDED(hr))
 			{
-				// Create a blue brush.
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF::Red),
 					&m_TightWeightBrush
 				);
+				if(FAILED(hr)) { OutputDebugString("Failed to create TightWeightBrush\n"); }
 			}
+
 			if(SUCCEEDED(hr))
 			{
 				hr = m_DWriteFactory->CreateTextFormat(
@@ -360,68 +401,85 @@ namespace NNVisualizer {
 	LRESULT CALLBACK Visualizer::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		LRESULT result = 0;
-
 		if(message == WM_CREATE)
 		{
 			LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
 			Visualizer* pVisualizer = (Visualizer*)pcs->lpCreateParams;
-
-			::SetWindowLongPtrW(
-				hwnd,
-				GWLP_USERDATA,
-				reinterpret_cast<LONG_PTR>(pVisualizer)
-			);
-
+			::SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pVisualizer));
 			result = 1;
 		}
 		else
 		{
-			Visualizer* pVisualizer = reinterpret_cast<Visualizer*>(static_cast<LONG_PTR>(
-				::GetWindowLongPtrW(
-					hwnd,
-					GWLP_USERDATA
-				)));
-
+			Visualizer* pVisualizer = reinterpret_cast<Visualizer*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 			bool wasHandled = false;
 
 			if(pVisualizer)
 			{
 				switch(message)
 				{
-				case WM_SIZE:
-				{
+				case WM_MOUSEWHEEL: {
+					int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+					if(delta > 0)
+					{
+						pVisualizer->ZoomIn();
+					}
+					else
+					{
+						pVisualizer->ZoomOut();
+					}
+					result = 0;
+					wasHandled = true;
+					break;
+				}
+				case WM_KEYDOWN: {
+					switch(wParam) {
+					case VK_LEFT:
+						pVisualizer->MoveCameraLeft(10.0f); 
+						break;
+					case VK_RIGHT:
+						pVisualizer->MoveCameraRight(10.0f);
+						break;
+					case VK_UP:
+						pVisualizer->MoveCameraUp(10.0f); 
+						break;
+					case VK_DOWN:
+						pVisualizer->MoveCameraDown(10.0f); 
+						break;
+					}
+					result = 0;
+					wasHandled = true;
+					break;
+				}
+				case WM_SIZE: {
 					UINT width = LOWORD(lParam);
 					UINT height = HIWORD(lParam);
 					pVisualizer->OnResize(width, height);
+					result = 0;
+					wasHandled = true;
+					break;
 				}
-				result = 0;
-				wasHandled = true;
-				break;
-
-				case WM_DISPLAYCHANGE:
-				{
+				case WM_DISPLAYCHANGE: {
 					InvalidateRect(hwnd, NULL, FALSE);
+					result = 0;
+					wasHandled = true;
+					break;
 				}
-				result = 0;
-				wasHandled = true;
-				break;
-
-				case WM_PAINT:
-				{
+				case WM_PAINT: {
 					pVisualizer->OnRender();
 					ValidateRect(hwnd, NULL);
+					result = 0;
+					wasHandled = true;
+					break;
 				}
-				result = 0;
-				wasHandled = true;
-				break;
-
-				case WM_DESTROY:
-				{
+				case WM_DESTROY: {
 					PostQuitMessage(0);
+					result = 1;
+					wasHandled = true;
+					break;
 				}
-				result = 1;
-				wasHandled = true;
-				break;
+				default:
+					result = DefWindowProc(hwnd, message, wParam, lParam);
+					break;
 				}
 			}
 
@@ -433,6 +491,7 @@ namespace NNVisualizer {
 
 		return result;
 	}
+
 
 	void Visualizer::OnResize(UINT width, UINT height)
 	{

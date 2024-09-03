@@ -2,7 +2,7 @@
 #include "nnvpch.h"
 #include "Core/NeuralNetwork.h"
 #include "Core/NeuronActivation/NeuronActivation.h"
-#include "Visualizer.h"
+#include "NNVisualizer/Visualizer.h"
 #include <windows.h>
 
 // Entry point for a Windows application
@@ -19,7 +19,7 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
 
 		std::vector<double> inputValues = { 0.5,0.2,0.4,0.1 };
 		std::vector<double> outputValues = { 0.00,0.00,0.00,0.00,1.00 };
-		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 5, static_cast<int>(outputValues.size()) };
+		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 12, static_cast<int>(outputValues.size()) };
 		auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
 		myNN->Train(inputValues, outputValues, 1); //todo Change this to step 
 		std::cout << static_cast<std::string>(*myNN->GetWeights()[0].get()) << std::endl;

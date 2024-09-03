@@ -15,5 +15,7 @@
 #include <dwrite.h>
 #include <wincodec.h>
 #include <sstream>
+#include <d2d1_3.h> 
+
 //! Utilities
 #include "NNVisualizer/Utils/Utilities.h"
