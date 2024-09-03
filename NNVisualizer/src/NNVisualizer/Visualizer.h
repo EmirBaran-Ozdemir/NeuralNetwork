@@ -22,7 +22,7 @@ namespace NNVisualizer {
 			UINT width,
 			UINT height
 		);
-		void SetZoomFactor(float zoomFactor);
+		void UpdateTextFormat();
 		static LRESULT CALLBACK WndProc(
 			HWND hWnd,
 			UINT message,
@@ -58,7 +58,9 @@ namespace NNVisualizer {
 		Renderer::Camera* m_Camera;
 		int m_ViewportHeight;
 		int m_ViewportWidth;
-		float m_zoomFactor = 1.0f;
+		float m_ZoomFactor = 1.0f;
+		float m_MinTextSize = 2.0f;
+
 		//! Render Data
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 	};
