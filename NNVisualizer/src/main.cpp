@@ -43,7 +43,7 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
 			if(SUCCEEDED(app.Initialize()))
 			{
 				app.SetNN(std::move(myNN));
-
+				
 				app.RunMessageLoop();
 			}
 		}
