@@ -19,7 +19,7 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
 
 		std::vector<double> inputValues = { 0.5,0.2,0.4,0.1 };
 		std::vector<double> outputValues = { 0.00,0.00,0.00,0.00,1.00 };
-		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 32, static_cast<int>(outputValues.size()) };
+		std::vector<int> topology = { static_cast<int>(inputValues.size()), 3, 8, 2, 9, 8, 2, 9, 5, 32, static_cast<int>(outputValues.size()) };
 		auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
 		myNN->Train(inputValues, outputValues, 1); //todo Change this to step 
 		std::cout << static_cast<std::string>(*myNN->GetWeights()[0].get()) << std::endl;

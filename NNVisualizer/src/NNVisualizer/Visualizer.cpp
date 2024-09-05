@@ -10,10 +10,8 @@ namespace NNVisualizer {
 		m_RenderTarget(NULL),
 		m_LooseWeightBrush(NULL),
 		m_MediumWeightBrush(NULL),
-		m_TightWeightBrush(NULL),
-		m_ZoomFactor(1.0f)
+		m_TightWeightBrush(NULL)
 	{
-		m_Camera = new Renderer::Camera(1440.f,820.f);
 	}
 
 	Visualizer::~Visualizer()
@@ -89,6 +87,7 @@ namespace NNVisualizer {
 					m_ViewportHeight,
 					SWP_NOMOVE
 				);
+				m_Camera = new Renderer::Camera();
 
 				// Show and update the window.
 				ShowWindow(m_hwnd, SW_SHOWNORMAL);
@@ -114,8 +113,6 @@ namespace NNVisualizer {
 			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
 			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-			// Apply camera transformation
-
 			// Render logic here
 			if(m_NeuralNetwork != nullptr) {
 				LoopNN();
@@ -131,18 +128,12 @@ namespace NNVisualizer {
 	}
 
 
-	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value) {
-		position.x *= m_ZoomFactor;
-		position.y *= m_ZoomFactor;
-		radius *= m_ZoomFactor;
+	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value)
+	{
 
-		D2D1_POINT_2F transformedPosition = position;
-		D2D1_MATRIX_4X4_F viewMatrix = m_Camera->GetViewMatrix();
-		transformedPosition.x = viewMatrix._11 * position.x ;
-		transformedPosition.y = viewMatrix._22 * position.y ;
-
-		D2D1_ELLIPSE ellipse = D2D1::Ellipse(transformedPosition, radius, radius);
+		D2D1_ELLIPSE ellipse = D2D1::Ellipse(position, radius, radius);
 		m_RenderTarget->DrawEllipse(&ellipse, m_LooseWeightBrush);
+
 
 		// Draw the text
 		std::wstringstream wss;
@@ -151,10 +142,10 @@ namespace NNVisualizer {
 		std::wstring valueStr = wss.str();
 
 		D2D1_RECT_F layoutRect = D2D1::RectF(
-			transformedPosition.x + radius,
-			transformedPosition.y + radius,
-			transformedPosition.x - radius,
-			transformedPosition.y - radius
+			position.x + radius,
+			position.y + radius,
+			position.x - radius,
+			position.y - radius
 		);
 
 		m_RenderTarget->DrawText(
@@ -165,8 +156,6 @@ namespace NNVisualizer {
 			m_LooseWeightBrush
 		);
 	}
-
-
 	// Additional methods to move the camera
 	void Visualizer::MoveCameraLeft(float distance) {
 		m_Camera->MoveLeft(distance);
@@ -187,26 +176,20 @@ namespace NNVisualizer {
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
 
-
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight)
 	{
-		// Apply zoom factor to line start and end points
-		start.x *= m_ZoomFactor;
-		start.y *= m_ZoomFactor;
-		end.x *= m_ZoomFactor;
-		end.y *= m_ZoomFactor;
 
 		if(weight < 0.33)
 		{
-			m_RenderTarget->DrawLine(start, end, m_LooseWeightBrush, 0.5f * m_ZoomFactor);
+			m_RenderTarget->DrawLine(start, end, m_LooseWeightBrush, 0.5f );
 		}
 		else if(weight < 0.66)
 		{
-			m_RenderTarget->DrawLine(start, end, m_MediumWeightBrush, 0.5f * m_ZoomFactor);
+			m_RenderTarget->DrawLine(start, end, m_MediumWeightBrush, 0.5f );
 		}
 		else
 		{
-			m_RenderTarget->DrawLine(start, end, m_TightWeightBrush, 0.5f * m_ZoomFactor);
+			m_RenderTarget->DrawLine(start, end, m_TightWeightBrush, 0.5f);
 		}
 	}
 
@@ -240,7 +223,7 @@ namespace NNVisualizer {
 			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{
 
-				float yOffset = yStartingGap + 20.0f + neuronIndex * verticalSpacing ;
+				float yOffset = yStartingGap + 20.0f + neuronIndex * verticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
 				double neuronValue = layer->GetNeurons()[neuronIndex]->GetActivatedValue();
@@ -273,15 +256,17 @@ namespace NNVisualizer {
 	}
 
 
-	void Visualizer::ZoomIn()
+	void Visualizer::ZoomIn(float cursorX, float cursorY)
 	{
-		m_ZoomFactor *= 1.1f; // Increase zoom factor by 10%
+		float newZoomFactor = m_Camera->GetZoomFactor() * 1.1f; // Increase zoom factor by 10%
+		m_Camera->Zoom(newZoomFactor, cursorX, cursorY);
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
 
-	void Visualizer::ZoomOut()
+	void Visualizer::ZoomOut(float cursorX, float cursorY)
 	{
-		m_ZoomFactor /= 1.1f; // Decrease zoom factor by 10%
+		float newZoomFactor = m_Camera->GetZoomFactor() / 1.1f; // Decrease zoom factor by 10%
+		m_Camera->Zoom(newZoomFactor, cursorX, cursorY);
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
 	void Visualizer::SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork)
@@ -405,13 +390,13 @@ namespace NNVisualizer {
 		SafeRelease(&m_TextFormat);
 
 		HRESULT hr = m_DWriteFactory->CreateTextFormat(
-			L"Sans Serif",    
-			NULL,             
+			L"Sans Serif",
+			NULL,
 			DWRITE_FONT_WEIGHT_REGULAR,
 			DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
-			8.0f * m_ZoomFactor,  
-			L"en-us",         
+			8.0f,
+			L"en-us",
 			&m_TextFormat
 		);
 
@@ -451,17 +436,25 @@ namespace NNVisualizer {
 				}
 				case WM_MOUSEWHEEL: {
 					int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+					POINT cursorPos;
+					GetCursorPos(&cursorPos);
+					ScreenToClient(hwnd, &cursorPos);
+
+					RECT rect;
+					GetClientRect(hwnd, &rect);
+					float screenWidth = static_cast<float>(rect.right - rect.left);
+					float screenHeight = static_cast<float>(rect.bottom - rect.top);
+
 					if(delta > 0)
 					{
-						pVisualizer->ZoomIn();
-						pVisualizer->UpdateTextFormat();
+						pVisualizer->ZoomIn(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
 					}
 					else
 					{
-						pVisualizer->ZoomOut();
-						pVisualizer->UpdateTextFormat();
-
+						pVisualizer->ZoomOut(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
 					}
+
+					pVisualizer->UpdateTextFormat();
 					result = 0;
 					wasHandled = true;
 					break;
@@ -469,23 +462,30 @@ namespace NNVisualizer {
 				case WM_KEYDOWN: {
 					switch(wParam) {
 					case VK_LEFT:
-						pVisualizer->MoveCameraLeft(10.0f); 
+						pVisualizer->MoveCameraLeft(10.0f);
 						break;
 					case VK_RIGHT:
 						pVisualizer->MoveCameraRight(10.0f);
 						break;
 					case VK_UP:
-						pVisualizer->MoveCameraUp(10.0f); 
+						pVisualizer->MoveCameraUp(10.0f);
 						break;
 					case VK_DOWN:
-						pVisualizer->MoveCameraDown(10.0f); 
+						pVisualizer->MoveCameraDown(10.0f);
 						break;
 					}
 					result = 0;
 					wasHandled = true;
 					break;
 				}
+				case WM_MOUSEMOVE:
+				{
+					InvalidateRect(hwnd, NULL, FALSE);
 
+					result = 0;
+					wasHandled = true;
+					break;
+				}
 				case WM_DISPLAYCHANGE: {
 					InvalidateRect(hwnd, NULL, FALSE);
 					result = 0;
@@ -505,9 +505,6 @@ namespace NNVisualizer {
 					wasHandled = true;
 					break;
 				}
-				default:
-					result = DefWindowProc(hwnd, message, wParam, lParam);
-					break;
 				}
 			}
 

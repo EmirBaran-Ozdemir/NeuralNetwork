@@ -36,8 +36,9 @@ namespace NNVisualizer {
 		void MoveCameraDown(float distance);
 		void DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight);
 		void LoopNN();
-		void ZoomOut();
-		void ZoomIn();
+		void ZoomIn(float cursorX, float cursorY);
+		void ZoomOut(float cursorX, float cursorY);
+
 
 		static D2D1_MATRIX_3X2_F Matrix4x4ToMatrix3x2(const D2D1_MATRIX_4X4_F& m4x4) {
 			return D2D1::Matrix3x2F(
@@ -58,7 +59,6 @@ namespace NNVisualizer {
 		Renderer::Camera* m_Camera;
 		int m_ViewportHeight;
 		int m_ViewportWidth;
-		float m_ZoomFactor = 1.0f;
 		float m_MinTextSize = 2.0f;
 
 		//! Render Data
