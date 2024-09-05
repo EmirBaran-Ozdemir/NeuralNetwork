@@ -252,33 +252,20 @@ namespace NNVisualizer {
 	{
 		const auto& layers = m_NeuralNetwork->GetLayers();
 		const auto& weights = m_NeuralNetwork->GetWeights();
-		size_t largestLayerSize = 0;
-
-		for(const auto& layer : layers)
-		{
-			if(layer->GetSize() > largestLayerSize)
-			{
-				largestLayerSize = layer->GetSize();
-			}
-		}
-
-		float nodeRadius = 10.0f;
-		float verticalSpacing = std::max(10.0f, static_cast<float>(m_ViewportHeight / (largestLayerSize + 1)));
-		float horizontalSpacing = std::max(20.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 
 		// Loop through each layer to draw nodes
 		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
 		{
 			const auto& layer = layers[layerIndex];
 			int layerSize = layer->GetSize();
-			float xOffset = 20.0f + layerIndex * horizontalSpacing;
+			float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
 			// Top gap for centering
-			float yStartingGap = ((float(largestLayerSize - layerSize) / 2) * (verticalSpacing));
+			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
 
 			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{
 				bool isChoosen = false;
-				float yOffset = yStartingGap + 20.0f + neuronIndex * verticalSpacing;
+				float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
 				double neuronValue = layer->GetNeurons()[neuronIndex]->GetActivatedValue();
@@ -286,7 +273,7 @@ namespace NNVisualizer {
 				{
 					isChoosen = true;
 				}
-				DrawNode(neuronPosition, nodeRadius, neuronValue, isChoosen);
+				DrawNode(neuronPosition, m_NodeRadius, neuronValue, isChoosen);
 			}
 
 			if(layerIndex < layers.size() - 1)
@@ -296,17 +283,17 @@ namespace NNVisualizer {
 
 				for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 				{
-					float yOffsetStart = yStartingGap + 20.0f + neuronIndex * verticalSpacing;
-					D2D1_POINT_2F start = D2D1::Point2F(xOffset + nodeRadius, yOffsetStart);
+					float yOffsetStart = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
+					D2D1_POINT_2F start = D2D1::Point2F(xOffset + m_NodeRadius, yOffsetStart);
 
 					for(size_t nextNeuronIndex = 0; nextNeuronIndex < nextLayer->GetSize(); ++nextNeuronIndex)
 					{
 						bool isChoosen = false;
 
-						float yNextStartingGap = ((float(largestLayerSize - nextLayer->GetSize()) / 2) * (verticalSpacing));
+						float yNextStartingGap = ((float(m_LargestLayerSize - nextLayer->GetSize()) / 2) * (m_VerticalSpacing));
 
-						float yOffsetEnd = yNextStartingGap + 20.0f + nextNeuronIndex * verticalSpacing;
-						D2D1_POINT_2F end = D2D1::Point2F(xOffset + horizontalSpacing - nodeRadius, yOffsetEnd);
+						float yOffsetEnd = yNextStartingGap + 20.0f + nextNeuronIndex * m_VerticalSpacing;
+						D2D1_POINT_2F end = D2D1::Point2F(xOffset + m_HorizontalSpacing - m_NodeRadius, yOffsetEnd);
 
 						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex);
 						if(m_ChoosenNeuron != nullptr && (layer->GetNeurons()[neuronIndex].get() == m_ChoosenNeuron || nextLayer->GetNeurons()[nextNeuronIndex].get() == m_ChoosenNeuron))
@@ -555,6 +542,20 @@ namespace NNVisualizer {
 	void Visualizer::SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork)
 	{
 		m_NeuralNetwork = std::move(neuralNetwork);
+		const auto& layers = m_NeuralNetwork->GetLayers();
+
+		for(const auto& layer : layers)
+		{
+			if(layer->GetSize() > m_LargestLayerSize)
+			{
+				m_LargestLayerSize = layer->GetSize();
+			}
+		}
+
+		m_NodeRadius = 10.0f;
+		m_VerticalSpacing = std::max(20.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
+		m_HorizontalSpacing = std::max(20.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
+		m_Camera->SetPosition(0, 200.0f);
 		UpdateWindow(m_hwnd);
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
@@ -562,18 +563,17 @@ namespace NNVisualizer {
 	void Visualizer::CheckNodeClick(int mouseX, int mouseY)
 	{
 		const auto& layers = m_NeuralNetwork->GetLayers();
-		size_t largestLayerSize = 0;
 		D2D1_POINT_2F worldCursorPos = m_Camera->GetCursorWorldPosition(D2D1::Point2F(mouseX, mouseY));
 		for(const auto& layer : layers)
 		{
-			if(layer->GetSize() > largestLayerSize)
+			if(layer->GetSize() > m_LargestLayerSize)
 			{
-				largestLayerSize = layer->GetSize();
+				m_LargestLayerSize = layer->GetSize();
 			}
 		}
 
 		float nodeRadius = 10.0f;
-		float verticalSpacing = std::max(10.0f, static_cast<float>(m_ViewportHeight / (largestLayerSize + 1)));
+		float verticalSpacing = std::max(20.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
 		float horizontalSpacing = std::max(20.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 		bool clickedOnAny = false;
 		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
@@ -581,7 +581,7 @@ namespace NNVisualizer {
 			const auto& layer = layers[layerIndex];
 			int layerSize = layer->GetSize();
 			float xOffset = 20.0f + layerIndex * horizontalSpacing;
-			float yStartingGap = ((float(largestLayerSize - layerSize) / 2) * (verticalSpacing));
+			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (verticalSpacing));
 
 			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{

@@ -39,6 +39,12 @@ namespace Renderer {
 	}
 
 
+	void Camera::SetPosition(float x, float y)
+	{
+		m_Position.x = x;
+		m_Position.y = y;
+	}
+
 	D2D1_POINT_2F Camera::GetCursorWorldPosition(D2D1_POINT_2F cursorPos)
 	{
 		float calculatedPosX = m_Position.x + cursorPos.x / m_ZoomFactor;

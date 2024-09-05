@@ -58,6 +58,11 @@ namespace NNVisualizer {
 		float m_MinTextSize = 2.0f;
 		bool m_AnyNeuronChoosed = false;
 		NNCore::Neuron* m_ChoosenNeuron = nullptr;
+
+		float m_VerticalSpacing;
+		float m_HorizontalSpacing;
+		float m_NodeRadius = 10.0f;
+		int m_LargestLayerSize = 0;
 		//! Render Data
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 	};
