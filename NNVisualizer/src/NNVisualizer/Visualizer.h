@@ -2,6 +2,7 @@
 #include "nnvpch.h"
 #include "Core/NeuralNetwork.h"
 #include "Renderer/Camera.h"
+#include "Components/Button.h"
 namespace NNVisualizer {
 
 	class Visualizer
@@ -63,6 +64,11 @@ namespace NNVisualizer {
 		float m_HorizontalSpacing;
 		float m_NodeRadius = 10.0f;
 		int m_LargestLayerSize = 0;
+
+		//! Components
+		Components::Button* m_StartButton;
+		Components::Button* m_StepButton;
+		Components::Button* m_StopButton;
 		//! Render Data
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 	};

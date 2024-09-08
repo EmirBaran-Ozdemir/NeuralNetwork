@@ -16,6 +16,11 @@
 #include <wincodec.h>
 #include <sstream>
 #include <d2d1_3.h> 
+#include <vector>
+#include <string>
+#include <iostream>
+#include <cstdlib>
+#include <iomanip>
 
 //! Utilities
 #include "NNVisualizer/Utils/Utilities.h"

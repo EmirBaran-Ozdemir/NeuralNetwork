@@ -200,7 +200,9 @@ namespace NNVisualizer {
 					&m_TextFormat
 				);
 			}
-
+			m_StartButton = new Components::Button(L"Start");
+			m_StepButton = new Components::Button(L"Step");
+			m_StopButton = new  Components::Button(L"Stop");
 			if(SUCCEEDED(hr))
 			{
 				// Center the text horizontally and vertically.
@@ -229,14 +231,31 @@ namespace NNVisualizer {
 		HRESULT hr = CreateDeviceResources();
 		if(SUCCEEDED(hr)) {
 			m_RenderTarget->BeginDraw();
+
+			// Apply the camera's view matrix for the main rendering
 			D2D1_MATRIX_4X4_F viewMatrix = m_Camera->GetViewMatrix();
 			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
 			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-			// Render logic here
+			// Render the neural network (or other scene objects) with the camera's view matrix
 			if(m_NeuralNetwork != nullptr) {
 				LoopNN();
 			}
+
+			// Save the current transformation matrix (which is the camera's view matrix)
+			D2D1_MATRIX_3X2_F previousTransform;
+			m_RenderTarget->GetTransform(&previousTransform);
+
+			// Reset the transform to identity to draw buttons in screen space
+			m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+			// Draw buttons
+			m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 10.0f, 10.0f, 100.0f, 40.0f);
+			m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 110.0f, 10.0f, 100.0f, 40.0f);
+			m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 210.0f, 10.0f, 100.0f, 40.0f);
+
+			// Restore the previous transform (the camera's view matrix)
+			m_RenderTarget->SetTransform(previousTransform);
 
 			hr = m_RenderTarget->EndDraw();
 			if(hr == D2DERR_RECREATE_TARGET) {
@@ -244,6 +263,7 @@ namespace NNVisualizer {
 				DiscardDeviceResources();
 			}
 		}
+
 		return hr;
 	}
 
@@ -445,12 +465,22 @@ namespace NNVisualizer {
 				}
 				case WM_LBUTTONDOWN:
 				{
-					POINT cursorPos;
-					GetCursorPos(&cursorPos);
-					ScreenToClient(hwnd, &cursorPos);
-					std::cout << cursorPos.x << " " << cursorPos.y << std::endl;
-					pVisualizer->CheckNodeClick(cursorPos.x, cursorPos.y);
+					POINT screenCursorPos;
+					GetCursorPos(&screenCursorPos);
+					POINT worldCursorPos = screenCursorPos;
+					ScreenToClient(hwnd, &worldCursorPos);
+					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
+					pVisualizer->CheckNodeClick(screenCursorPos.x, screenCursorPos.y);
 
+
+					if(pVisualizer->m_StartButton->IsClicked(worldCursorPos.x, worldCursorPos.y))
+					{
+						// Handle Start button click
+					}
+					else if(pVisualizer->m_StopButton->IsClicked(worldCursorPos.x, worldCursorPos.y))
+					{
+						// Handle Stop button click
+					}
 					result = 0;
 					wasHandled = true;
 					break;
@@ -553,11 +583,12 @@ namespace NNVisualizer {
 		}
 
 		m_NodeRadius = 10.0f;
-		m_VerticalSpacing = std::max(20.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
-		m_HorizontalSpacing = std::max(20.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
+		m_VerticalSpacing = std::max(30.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
+		m_HorizontalSpacing = std::max(50.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 		m_Camera->SetPosition(0, 200.0f);
 		UpdateWindow(m_hwnd);
 		InvalidateRect(m_hwnd, NULL, FALSE);
+
 	}
 
 	void Visualizer::CheckNodeClick(int mouseX, int mouseY)
@@ -572,26 +603,23 @@ namespace NNVisualizer {
 			}
 		}
 
-		float nodeRadius = 10.0f;
-		float verticalSpacing = std::max(20.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
-		float horizontalSpacing = std::max(20.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 		bool clickedOnAny = false;
 		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
 		{
 			const auto& layer = layers[layerIndex];
 			int layerSize = layer->GetSize();
-			float xOffset = 20.0f + layerIndex * horizontalSpacing;
-			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (verticalSpacing));
+			float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
+			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
 
 			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{
-				float yOffset = yStartingGap + 20.0f + neuronIndex * verticalSpacing;
+				float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
 				// Check if the click is within the radius of the node
 				float distance = sqrt(pow(neuronPosition.x - worldCursorPos.x, 2) + pow(neuronPosition.y - worldCursorPos.y, 2));
 
-				if(distance <= nodeRadius)
+				if(distance <= m_NodeRadius)
 				{
 					clickedOnAny = true;
 					m_AnyNeuronChoosed = true;
@@ -652,7 +680,6 @@ namespace NNVisualizer {
 		SafeRelease(&m_LooseWeightBrush);
 		SafeRelease(&m_MediumWeightBrush);
 		SafeRelease(&m_TightWeightBrush);
-		SafeRelease(&m_GrayBrush);
 	}
 
 }

@@ -2,40 +2,35 @@
 #include "Core/NeuralNetwork.h"
 #include "Core/NeuronActivation/NeuronActivation.h"
 #include "NNVisualizer/Visualizer.h"
-#include <windows.h>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <iostream>
-#include <cstdlib>
 
-// Utility function to parse comma-separated values from a string
 std::vector<double> parseValues(const std::string& input) {
     std::vector<double> values;
     std::stringstream ss(input);
     std::string token;
 
     while(std::getline(ss, token, ',')) {
+        // Trim whitespace from token
+        token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
         values.push_back(std::stod(token));
     }
 
     return values;
 }
 
-// Utility function to parse integer values for topology
 std::vector<int> parseTopology(const std::string& input) {
     std::vector<int> values;
     std::stringstream ss(input);
     std::string token;
 
     while(std::getline(ss, token, ',')) {
+        // Trim whitespace from token
+        token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
         values.push_back(std::stoi(token));
     }
 
     return values;
 }
 
-// Function to parse command-line arguments
 void parseCommandLineArgs(int argc, char* argv[],
     std::vector<double>& inputValues,
     std::vector<double>& outputValues,
@@ -69,6 +64,9 @@ void parseCommandLineArgs(int argc, char* argv[],
             if(activationStr == "sigmoid") {
                 activationFunction = NNCore::NeuronActivation::ActivationFunction::Sigmoid;
             }
+            else if(activationStr == "fast_sigmoid") {
+                activationFunction = NNCore::NeuronActivation::ActivationFunction::FastSigmoid;
+            }
             else if(activationStr == "relu") {
                 activationFunction = NNCore::NeuronActivation::ActivationFunction::ReLU;
             }
@@ -91,12 +89,21 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
     try {
         // Convert command line parameters to argc/argv
         int argc = 0;
-        char* argv[256];
+        std::vector<std::string> args;
         char* cmdLine = GetCommandLineA();
-        char* token = strtok(cmdLine, " ");
-        while(token) {
-            argv[argc++] = token;
-            token = strtok(NULL, " ");
+        std::string cmdLineStr = cmdLine;
+
+        // Split the command line string into arguments while preserving spaces within parameters
+        std::istringstream iss(cmdLineStr);
+        std::string arg;
+        while(iss >> std::quoted(arg)) {
+            args.push_back(arg);
+        }
+
+        argc = args.size();
+        char* argv[256];
+        for(int i = 0; i < argc; ++i) {
+            argv[i] = const_cast<char*>(args[i].c_str());
         }
 
         std::vector<double> inputValues;
@@ -108,17 +115,7 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
         parseCommandLineArgs(argc, argv, inputValues, outputValues, topology, activationFunction);
 
         auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
-        myNN->Train(inputValues, outputValues, 1); // Train the network
-
-        std::cout << static_cast<std::string>(*myNN->GetWeights()[0].get()) << std::endl;
-
-        for(auto& layer : myNN->GetLayers()) {
-            auto& neurons = layer.get()->GetNeurons();
-            for(auto& neuron : neurons) {
-                std::cout << neuron->GetActivatedValue() << std::endl;
-            }
-            std::cout << std::endl;
-        }
+        myNN->Train(inputValues, outputValues, 1); 
 
         // Visualizer setup
         if(SUCCEEDED(CoInitialize(NULL))) {
