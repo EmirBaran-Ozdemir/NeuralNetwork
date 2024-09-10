@@ -470,7 +470,7 @@ namespace NNVisualizer {
 					POINT worldCursorPos = screenCursorPos;
 					ScreenToClient(hwnd, &worldCursorPos);
 					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
-					pVisualizer->CheckNodeClick(screenCursorPos.x, screenCursorPos.y);
+					pVisualizer->CheckNodeClick(worldCursorPos.x, worldCursorPos.y);
 
 
 					if(pVisualizer->m_StartButton->IsClicked(worldCursorPos.x, worldCursorPos.y))
@@ -479,6 +479,7 @@ namespace NNVisualizer {
 					}
 					else if(pVisualizer->m_StopButton->IsClicked(worldCursorPos.x, worldCursorPos.y))
 					{
+
 						// Handle Stop button click
 					}
 					result = 0;
@@ -680,6 +681,9 @@ namespace NNVisualizer {
 		SafeRelease(&m_LooseWeightBrush);
 		SafeRelease(&m_MediumWeightBrush);
 		SafeRelease(&m_TightWeightBrush);
+		SafeRelease(&m_GrayBrush);
+		SafeRelease(&m_BlackBrush);
+
 	}
 
 }
