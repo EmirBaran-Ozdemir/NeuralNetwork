@@ -4,7 +4,7 @@
 
 namespace NNCore {
 
-	NeuralNetwork::NeuralNetwork(const std::vector<int>& topology, NeuronActivation::ActivationFunction activationFunction)
+	NeuralNetwork::NeuralNetwork(const std::vector<int>& topology, NeuronActivation::ActivationFunction activationFunction, std::vector<double> inputValues, std::vector<double> outputValues)
 		: m_Topology(topology), m_ActivationFunction(activationFunction)
 	{
 		//! Initialize layers
@@ -16,20 +16,20 @@ namespace NNCore {
 		for(size_t i = 0; i < m_Layers.size() - 1; ++i) {
 			m_Weights.emplace_back(std::make_unique<Utils::Matrix>(m_Layers[i]->GetSize(), m_Layers[i + 1]->GetSize(), true));
 		}
-	}
-
-	void NeuralNetwork::Train(std::vector<double> inputValues, std::vector<double> outputValues, int epochs)
-	{
 		if(inputValues.size() != m_Layers[0]->GetSize() || outputValues.size() != m_Layers.back()->GetSize()) {
 			throw std::invalid_argument("Input or output size does not match the network topology.");
 		}
-		m_Layers[0].get()->SetLayer(inputValues);
 		m_TargetOutputValues = outputValues;
+		m_Layers[0].get()->SetLayer(inputValues);
+	}
 
+	void NeuralNetwork::Train(int epochs)
+	{
 		m_FirstEpoch = true;
 		
 		for(int epoch = 0; epoch < epochs; ++epoch)
 		{
+			// Add timer functionality
 			double currentCost = 0.00;
 			//! If this is not the first run then re-calculate weights
 			if(!m_FirstEpoch)

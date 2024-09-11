@@ -3,6 +3,68 @@
 #include "Core/NeuronActivation/NeuronActivation.h"
 #include "NNVisualizer/Visualizer.h"
 
+void parseCommandLineArgs(int argc, char* argv[],
+    std::vector<double>& inputValues,
+    std::vector<double>& outputValues,
+    std::vector<int>& topology,
+    NNCore::NeuronActivation::ActivationFunction& activationFunction);
+
+// Entry point for a Windows application
+int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+
+    try {
+        int argc = 0;
+        std::vector<std::string> args;
+        char* cmdLine = GetCommandLineA();
+        std::string cmdLineStr = cmdLine;
+
+        std::istringstream iss(cmdLineStr);
+        std::string arg;
+        while(iss >> std::quoted(arg)) {
+            args.push_back(arg);
+        }
+
+        argc = args.size();
+        char* argv[256];
+        for(int i = 0; i < argc; ++i) {
+            argv[i] = const_cast<char*>(args[i].c_str());
+        }
+
+        std::vector<double> inputValues;
+        std::vector<double> outputValues;
+        std::vector<int> topology;
+        NNCore::NeuronActivation::ActivationFunction activationFunction;
+
+        parseCommandLineArgs(argc, argv, inputValues, outputValues, topology, activationFunction);
+
+        //! Main program loop 
+
+        auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction, inputValues, outputValues);
+        myNN->Train(1);
+
+        // Visualizer setup
+        if(SUCCEEDED(CoInitialize(NULL))) {
+            {
+                NNVisualizer::Visualizer app;
+
+                if(SUCCEEDED(app.Initialize())) {
+                    app.SetNN(std::move(myNN));
+                    app.RunMessageLoop();
+                }
+            }
+            CoUninitialize();
+        }
+    }
+    catch(std::invalid_argument& err) {
+        std::cerr << err.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+    return 0;
+}
+
+
+
 std::vector<double> parseValues(const std::string& input) {
     std::vector<double> values;
     std::stringstream ss(input);
@@ -82,57 +144,3 @@ void parseCommandLineArgs(int argc, char* argv[],
     }
 }
 
-// Entry point for a Windows application
-int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-
-    try {
-        // Convert command line parameters to argc/argv
-        int argc = 0;
-        std::vector<std::string> args;
-        char* cmdLine = GetCommandLineA();
-        std::string cmdLineStr = cmdLine;
-
-        // Split the command line string into arguments while preserving spaces within parameters
-        std::istringstream iss(cmdLineStr);
-        std::string arg;
-        while(iss >> std::quoted(arg)) {
-            args.push_back(arg);
-        }
-
-        argc = args.size();
-        char* argv[256];
-        for(int i = 0; i < argc; ++i) {
-            argv[i] = const_cast<char*>(args[i].c_str());
-        }
-
-        std::vector<double> inputValues;
-        std::vector<double> outputValues;
-        std::vector<int> topology;
-        NNCore::NeuronActivation::ActivationFunction activationFunction;
-
-        // Parse command-line arguments
-        parseCommandLineArgs(argc, argv, inputValues, outputValues, topology, activationFunction);
-
-        auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction);
-        myNN->Train(inputValues, outputValues, 1); 
-
-        // Visualizer setup
-        if(SUCCEEDED(CoInitialize(NULL))) {
-            {
-                NNVisualizer::Visualizer app;
-
-                if(SUCCEEDED(app.Initialize())) {
-                    app.SetNN(std::move(myNN));
-                    app.RunMessageLoop();
-                }
-            }
-            CoUninitialize();
-        }
-    }
-    catch(std::invalid_argument& err) {
-        std::cerr << err.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-    return 0;
-}

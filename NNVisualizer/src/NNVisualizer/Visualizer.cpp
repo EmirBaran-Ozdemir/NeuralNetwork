@@ -12,6 +12,11 @@ namespace NNVisualizer {
 		m_LooseWeightBrush(NULL),
 		m_MediumWeightBrush(NULL),
 		m_TightWeightBrush(NULL),
+		m_BlackBrush(NULL),
+		m_LimeGreenBrush(NULL),
+		m_GrayBrush(NULL),
+		m_HorizontalSpacing(0),
+		m_VerticalSpacing(0),
 		m_Camera(nullptr),
 		m_ViewportWidth(0),
 		m_ViewportHeight(0)
@@ -32,12 +37,10 @@ namespace NNVisualizer {
 	{
 		HRESULT hr = S_OK;
 
-		// Initialize device-independent resources, such as the Direct2D factory.
 		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_Direct2dFactory);
 
 		if(SUCCEEDED(hr))
 		{
-			// Create a DirectWrite factory.
 			hr = DWriteCreateFactory(
 				DWRITE_FACTORY_TYPE_SHARED,
 				__uuidof(IDWriteFactory),
@@ -47,7 +50,6 @@ namespace NNVisualizer {
 
 		if(SUCCEEDED(hr))
 		{
-			// Register the window class.
 			WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
 			wcex.style = CS_HREDRAW | CS_VREDRAW;
 			wcex.lpfnWndProc = Visualizer::WndProc;
@@ -61,7 +63,6 @@ namespace NNVisualizer {
 
 			RegisterClassEx(&wcex);
 
-			// Create the window hidden initially.
 			m_hwnd = CreateWindow(
 				"D2DVisualizer",
 				"NNVisualizer",
@@ -93,11 +94,9 @@ namespace NNVisualizer {
 				);
 				m_Camera = new Renderer::Camera();
 
-				// Show and update the window.
 				ShowWindow(m_hwnd, SW_SHOWNORMAL);
 				UpdateWindow(m_hwnd);
 
-				// Invalidate the client area to trigger a WM_PAINT message.
 				InvalidateRect(m_hwnd, NULL, FALSE);
 			}
 			else
@@ -112,11 +111,9 @@ namespace NNVisualizer {
 	{
 		HRESULT hr = S_OK;
 
-		// Create a Direct2D factory.
 		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_Direct2dFactory);
 		if(SUCCEEDED(hr))
 		{
-			// Create a DirectWrite factory.
 			hr = DWriteCreateFactory(
 				DWRITE_FACTORY_TYPE_SHARED,
 				__uuidof(IDWriteFactory),
@@ -186,26 +183,38 @@ namespace NNVisualizer {
 				);
 				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
 			}
+			if(SUCCEEDED(hr))
+			{
+				hr = m_RenderTarget->CreateSolidColorBrush(
+					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::LimeGreen, 0.4)),
+					&m_LimeGreenBrush
+				);
+				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
+			}
 
 			if(SUCCEEDED(hr))
 			{
 				hr = m_DWriteFactory->CreateTextFormat(
-					L"Sans Serif",    // Font family name.
-					NULL,           // Font collection (NULL sets it to use the system font collection).
+					L"Sans Serif",    
+					NULL,           
 					DWRITE_FONT_WEIGHT_REGULAR,
 					DWRITE_FONT_STYLE_NORMAL,
 					DWRITE_FONT_STRETCH_NORMAL,
-					8.0f,          // Font size.
-					L"en-us",       // Locale.
+					8.0f,          
+					L"en-us",       
 					&m_TextFormat
 				);
 			}
-			m_StartButton = new Components::Button(L"Start");
-			m_StepButton = new Components::Button(L"Step");
-			m_StopButton = new  Components::Button(L"Stop");
+
+			m_StartButton = std::make_unique<Components::Button>(L"Start");
+			m_StepButton = std::make_unique<Components::Button>(L"Step");
+			m_StopButton = std::make_unique<Components::Button>(L"Stop");
+			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology");
+			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"StartingInputs");
+			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"TargetOutputs");
+
 			if(SUCCEEDED(hr))
 			{
-				// Center the text horizontally and vertically.
 				m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 				m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
@@ -214,7 +223,27 @@ namespace NNVisualizer {
 		return hr;
 	}
 
+	void Visualizer::SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork)
+	{
+		m_NeuralNetwork = std::move(neuralNetwork);
+		const auto& layers = m_NeuralNetwork->GetLayers();
 
+		for(const auto& layer : layers)
+		{
+			if(layer->GetSize() > m_LargestLayerSize)
+			{
+				m_LargestLayerSize = layer->GetSize();
+			}
+		}
+
+		m_NodeRadius = 10.0f;
+		m_VerticalSpacing = std::max(30.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
+		m_HorizontalSpacing = std::max(50.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
+		m_Camera->SetPosition(0, 200.0f);
+		UpdateWindow(m_hwnd);
+		InvalidateRect(m_hwnd, NULL, FALSE);
+
+	}
 
 	void Visualizer::RunMessageLoop()
 	{
@@ -229,36 +258,54 @@ namespace NNVisualizer {
 	HRESULT Visualizer::OnRender()
 	{
 		HRESULT hr = CreateDeviceResources();
-		if(SUCCEEDED(hr)) {
+		if(SUCCEEDED(hr))
+		{
 			m_RenderTarget->BeginDraw();
 
-			// Apply the camera's view matrix for the main rendering
 			D2D1_MATRIX_4X4_F viewMatrix = m_Camera->GetViewMatrix();
 			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
 			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-			// Render the neural network (or other scene objects) with the camera's view matrix
-			if(m_NeuralNetwork != nullptr) {
-				LoopNN();
+			if(m_NeuralNetwork != nullptr)
+			{
+				switch(m_LoopState)
+				{
+				case Utils::LoopState::Running:
+					LoopNN();
+					break;
+				case Utils::LoopState::Stepping:
+					LoopNN();
+					m_LoopState = Utils::LoopState::Stopped;
+					break;
+				case Utils::LoopState::Stopped:
+					break;
+				}
 			}
 
-			// Save the current transformation matrix (which is the camera's view matrix)
+
 			D2D1_MATRIX_3X2_F previousTransform;
 			m_RenderTarget->GetTransform(&previousTransform);
 
-			// Reset the transform to identity to draw buttons in screen space
 			m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-			// Draw buttons
 			m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 10.0f, 10.0f, 100.0f, 40.0f);
 			m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 110.0f, 10.0f, 100.0f, 40.0f);
 			m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 210.0f, 10.0f, 100.0f, 40.0f);
 
-			// Restore the previous transform (the camera's view matrix)
+
+			float xIndex = 310.0f;
+			DrawTextField(m_TopologyTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_TextFormat, xIndex, 100.0f, 100.0f, 40.0f);
+			xIndex += 100.0f;
+			DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_TextFormat, xIndex, 100.0f, 100.0f, 40.0f);
+			xIndex += 100.0f;
+			DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_TextFormat, xIndex, 100.0f, 100.0f, 40.0f);
+
+
 			m_RenderTarget->SetTransform(previousTransform);
 
 			hr = m_RenderTarget->EndDraw();
-			if(hr == D2DERR_RECREATE_TARGET) {
+			if(hr == D2DERR_RECREATE_TARGET)
+			{
 				hr = S_OK;
 				DiscardDeviceResources();
 			}
@@ -273,13 +320,11 @@ namespace NNVisualizer {
 		const auto& layers = m_NeuralNetwork->GetLayers();
 		const auto& weights = m_NeuralNetwork->GetWeights();
 
-		// Loop through each layer to draw nodes
 		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
 		{
 			const auto& layer = layers[layerIndex];
 			int layerSize = layer->GetSize();
 			float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
-			// Top gap for centering
 			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
 
 			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
@@ -343,7 +388,6 @@ namespace NNVisualizer {
 		D2D1_ELLIPSE ellipse = D2D1::Ellipse(position, radius, radius);
 		m_RenderTarget->DrawEllipse(&ellipse, brush);
 
-		// Draw the text
 		std::wstringstream wss;
 		wss.precision(2);
 		wss << std::fixed << value;
@@ -457,6 +501,8 @@ namespace NNVisualizer {
 					case VK_DOWN:
 						pVisualizer->MoveCameraDown(10.0f);
 						break;
+					default:
+						pVisualizer->m_SelectedTextField->KeyStroke(wParam);
 					}
 
 					result = 0;
@@ -471,17 +517,10 @@ namespace NNVisualizer {
 					ScreenToClient(hwnd, &worldCursorPos);
 					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
 					pVisualizer->CheckNodeClick(worldCursorPos.x, worldCursorPos.y);
+					pVisualizer->HandleMouseClick(worldCursorPos);
 
 
-					if(pVisualizer->m_StartButton->IsClicked(worldCursorPos.x, worldCursorPos.y))
-					{
-						// Handle Start button click
-					}
-					else if(pVisualizer->m_StopButton->IsClicked(worldCursorPos.x, worldCursorPos.y))
-					{
-
-						// Handle Stop button click
-					}
+					// HANDLE
 					result = 0;
 					wasHandled = true;
 					break;
@@ -509,7 +548,7 @@ namespace NNVisualizer {
 				case WM_PAINT:
 				{
 					pVisualizer->OnRender();
-					ValidateRect(hwnd, NULL);
+					InvalidateRect(hwnd, NULL, FALSE);
 					result = 0;
 					wasHandled = true;
 					break;
@@ -570,27 +609,22 @@ namespace NNVisualizer {
 		m_Camera->Zoom(newZoomFactor, D2D1::Point2(cursorX, cursorY));
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
-	void Visualizer::SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork)
+
+
+	void Visualizer::HandleMouseClick(const POINT& worldCursorPos)
 	{
-		m_NeuralNetwork = std::move(neuralNetwork);
-		const auto& layers = m_NeuralNetwork->GetLayers();
+		//! Handle button clicks
+		if(HandleButtonClick(m_StartButton, Utils::LoopState::Running, m_LoopState, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleButtonClick(m_StepButton, Utils::LoopState::Stepping, m_LoopState, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleButtonClick(m_StopButton, Utils::LoopState::Stopped, m_LoopState, worldCursorPos.x, worldCursorPos.y)) return;
 
-		for(const auto& layer : layers)
-		{
-			if(layer->GetSize() > m_LargestLayerSize)
-			{
-				m_LargestLayerSize = layer->GetSize();
-			}
-		}
-
-		m_NodeRadius = 10.0f;
-		m_VerticalSpacing = std::max(30.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
-		m_HorizontalSpacing = std::max(50.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
-		m_Camera->SetPosition(0, 200.0f);
-		UpdateWindow(m_hwnd);
-		InvalidateRect(m_hwnd, NULL, FALSE);
+		//! Handle text field selections
+		if(HandleTextFieldSelection(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleTextFieldSelection(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleTextFieldSelection(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 
 	}
+
 
 	void Visualizer::CheckNodeClick(int mouseX, int mouseY)
 	{
@@ -638,6 +672,7 @@ namespace NNVisualizer {
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	}
+
 
 
 

@@ -2,7 +2,8 @@
 #include "nnvpch.h"
 #include "Core/NeuralNetwork.h"
 #include "Renderer/Camera.h"
-#include "Components/Button.h"
+#include "Components/Components.h"
+
 namespace NNVisualizer {
 
 	class Visualizer
@@ -29,6 +30,7 @@ namespace NNVisualizer {
 		void MoveCameraDown(float distance);
 		void ZoomIn(float cursorX, float cursorY);
 		void ZoomOut(float cursorX, float cursorY);
+		void HandleMouseClick(const POINT& worldCursorPos);
 		void CheckNodeClick(int mouseX, int mouseY);
 		void OnResize(UINT width,UINT height);
 		void UpdateTextFormat();
@@ -41,6 +43,37 @@ namespace NNVisualizer {
 				m4x4._41, m4x4._42
 			);
 		}
+		static bool HandleButtonClick(const std::unique_ptr<Components::Button>& button, Utils::LoopState newState, Utils::LoopState& currentState, float cursorX, float cursorY)
+		{
+			if(button->IsClicked(cursorX, cursorY))
+			{
+				currentState = newState;
+				return true;
+			}
+			return false;
+		}
+
+		static bool HandleTextFieldSelection(std::shared_ptr<Components::TextField>& textField, std::shared_ptr<Components::TextField>& selectedTextField, float cursorX, float cursorY)
+		{
+			if(textField->IsClicked(cursorX, cursorY))
+			{
+				selectedTextField = textField;
+				return true;
+			}
+			return false;
+		}
+
+		void static DrawTextField(std::shared_ptr<Components::TextField>& textField,
+			std::shared_ptr<Components::TextField>& selectedTextField,
+			ID2D1HwndRenderTarget* renderTarget,
+			ID2D1SolidColorBrush* normalBrush,
+			ID2D1SolidColorBrush* selectedBrush,
+			IDWriteTextFormat* textFormat,
+			float x, float y, float width, float height)
+		{
+			bool isSelected = textField.get() == selectedTextField.get();
+			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, textFormat, x, y, width, height, isSelected);
+		}
 	private:
 		HWND m_hwnd;
 		ID2D1Factory* m_Direct2dFactory;
@@ -52,6 +85,7 @@ namespace NNVisualizer {
 		ID2D1SolidColorBrush* m_TightWeightBrush;
 		ID2D1SolidColorBrush* m_GrayBrush;
 		ID2D1SolidColorBrush* m_BlackBrush;
+		ID2D1SolidColorBrush* m_LimeGreenBrush;
 		
 		Renderer::Camera* m_Camera;
 		int m_ViewportHeight;
@@ -65,10 +99,18 @@ namespace NNVisualizer {
 		float m_NodeRadius = 10.0f;
 		int m_LargestLayerSize = 0;
 
+		Utils::LoopState m_LoopState = Utils::LoopState::Stepping;
+
 		//! Components
-		Components::Button* m_StartButton;
-		Components::Button* m_StepButton;
-		Components::Button* m_StopButton;
+		std::unique_ptr<Components::Button> m_StartButton;
+		std::unique_ptr<Components::Button> m_StepButton;
+		std::unique_ptr<Components::Button> m_StopButton;
+
+		std::shared_ptr<Components::TextField> m_TopologyTextField;
+		std::shared_ptr<Components::TextField> m_StartingInputsTextField;
+		std::shared_ptr<Components::TextField> m_TargetOutputsTextField;
+		std::shared_ptr<Components::TextField> m_SelectedTextField;
+		
 		//! Render Data
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 	};

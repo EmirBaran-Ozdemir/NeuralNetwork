@@ -20,7 +20,7 @@ add_library(NeuralNetwork SHARED
     ${LAYER_SOURCE_FILES}
     ${UTILS_SOURCE_FILES}
     ${NEURONACTIVATION_SOURCE_FILES}
-)
+ )
 
 # Set the export macro for DLL
 target_compile_definitions(NeuralNetwork PRIVATE BUILDING_NEURALNETWORK)

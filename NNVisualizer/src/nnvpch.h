@@ -23,4 +23,4 @@
 #include <iomanip>
 
 //! Utilities
-#include "NNVisualizer/Utils/Utilities.h"
+#include "NNVisualizer/Utils/Utils.h"

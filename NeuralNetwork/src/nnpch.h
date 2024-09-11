@@ -18,6 +18,8 @@
 #include <random>
 #include <ostream>
 #include <string>
-#include <math.h>
+#include <chrono>
+#include <thread>
+
 // Core
-#include "Core/Utils/Core.h"
+#include "Core/Utils/Utils.h"
