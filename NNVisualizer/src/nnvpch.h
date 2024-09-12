@@ -21,6 +21,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <iomanip>
+#include <locale>
+#include <codecvt>
 
 //! Utilities
 #include "NNVisualizer/Utils/Utils.h"

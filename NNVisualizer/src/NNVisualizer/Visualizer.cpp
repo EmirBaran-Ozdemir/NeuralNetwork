@@ -8,6 +8,8 @@ namespace NNVisualizer {
 		m_Direct2dFactory(NULL),
 		m_DWriteFactory(NULL),
 		m_TextFormat(NULL),
+		m_MenuTextFormat(NULL),
+		m_ErrorTextFormat(NULL),
 		m_RenderTarget(NULL),
 		m_LooseWeightBrush(NULL),
 		m_MediumWeightBrush(NULL),
@@ -29,6 +31,8 @@ namespace NNVisualizer {
 		SafeRelease(&m_DWriteFactory);
 		SafeRelease(&m_RenderTarget);
 		SafeRelease(&m_TextFormat);
+		SafeRelease(&m_MenuTextFormat);
+		SafeRelease(&m_ErrorTextFormat);
 		SafeRelease(&m_LooseWeightBrush);
 		SafeRelease(&m_MediumWeightBrush);
 		SafeRelease(&m_TightWeightBrush);
@@ -104,7 +108,6 @@ namespace NNVisualizer {
 				hr = E_FAIL;
 			}
 		}
-
 		return hr;
 	}
 	HRESULT Visualizer::CreateDeviceIndependentResources()
@@ -195,17 +198,38 @@ namespace NNVisualizer {
 			if(SUCCEEDED(hr))
 			{
 				hr = m_DWriteFactory->CreateTextFormat(
-					L"Sans Serif",    
-					NULL,           
+					L"Sans Serif",
+					NULL,
 					DWRITE_FONT_WEIGHT_REGULAR,
 					DWRITE_FONT_STYLE_NORMAL,
 					DWRITE_FONT_STRETCH_NORMAL,
-					8.0f,          
-					L"en-us",       
+					8.0f,
+					L"en-us",
 					&m_TextFormat
+				);
+				hr = m_DWriteFactory->CreateTextFormat(
+					L"Sans Serif",
+					NULL,
+					DWRITE_FONT_WEIGHT_REGULAR,
+					DWRITE_FONT_STYLE_NORMAL,
+					DWRITE_FONT_STRETCH_NORMAL,
+					24.0f,
+					L"en-us",
+					&m_ErrorTextFormat
+				);
+				hr = m_DWriteFactory->CreateTextFormat(
+					L"Sans Serif",
+					NULL,
+					DWRITE_FONT_WEIGHT_REGULAR,
+					DWRITE_FONT_STYLE_NORMAL,
+					DWRITE_FONT_STRETCH_NORMAL,
+					16.0f,
+					L"en-us",
+					&m_MenuTextFormat
 				);
 			}
 
+			m_InitializeButton = std::make_unique<Components::Button>(L"Initialize");
 			m_StartButton = std::make_unique<Components::Button>(L"Start");
 			m_StepButton = std::make_unique<Components::Button>(L"Step");
 			m_StopButton = std::make_unique<Components::Button>(L"Stop");
@@ -217,6 +241,10 @@ namespace NNVisualizer {
 			{
 				m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 				m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+				m_MenuTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+				m_MenuTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+				m_ErrorTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+				m_ErrorTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
 		}
 
@@ -237,8 +265,10 @@ namespace NNVisualizer {
 		}
 
 		m_NodeRadius = 10.0f;
-		m_VerticalSpacing = std::max(30.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
-		m_HorizontalSpacing = std::max(50.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
+		m_VerticalSpacing = std::max(25.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
+
+		//todo: Calculate max using verticalspacing
+		m_HorizontalSpacing = std::max(120.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 		m_Camera->SetPosition(0, 200.0f);
 		UpdateWindow(m_hwnd);
 		InvalidateRect(m_hwnd, NULL, FALSE);
@@ -266,15 +296,15 @@ namespace NNVisualizer {
 			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
 			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
+
 			if(m_NeuralNetwork != nullptr)
 			{
+				LoopNN();
 				switch(m_LoopState)
 				{
 				case Utils::LoopState::Running:
-					LoopNN();
 					break;
 				case Utils::LoopState::Stepping:
-					LoopNN();
 					m_LoopState = Utils::LoopState::Stopped;
 					break;
 				case Utils::LoopState::Stopped:
@@ -288,18 +318,38 @@ namespace NNVisualizer {
 
 			m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-			m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 10.0f, 10.0f, 100.0f, 40.0f);
-			m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 110.0f, 10.0f, 100.0f, 40.0f);
-			m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 210.0f, 10.0f, 100.0f, 40.0f);
-
-
-			float xIndex = 310.0f;
-			DrawTextField(m_TopologyTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_TextFormat, xIndex, 100.0f, 100.0f, 40.0f);
-			xIndex += 100.0f;
-			DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_TextFormat, xIndex, 100.0f, 100.0f, 40.0f);
-			xIndex += 100.0f;
-			DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_TextFormat, xIndex, 100.0f, 100.0f, 40.0f);
-
+			if(!m_Initialized)
+			{
+				if(!m_ExceptionMessage.empty())
+				{
+					m_RenderTarget->DrawText(
+						m_ExceptionMessage.c_str(),
+						static_cast<UINT32>(m_ExceptionMessage.size()),
+						m_ErrorTextFormat,
+						D2D1::RectF(
+							000.0f,
+							000.0f,
+							m_ViewportWidth,
+							m_ViewportHeight
+						),
+						m_BlackBrush
+					);
+				}
+				float buttonWidth = 200.0f;
+				float buttonHeight = 50.0f;
+				float xCenter = static_cast<float>(m_ViewportWidth) / 2;
+				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (buttonHeight * 3);
+				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter - buttonWidth / 2, yCenter - 80.0f, buttonWidth, buttonHeight);
+				DrawTextField(m_TopologyTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_MenuTextFormat, xCenter - (buttonWidth + buttonWidth / 2) , yCenter, buttonWidth, buttonHeight);
+				DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_MenuTextFormat, xCenter - buttonWidth / 2, yCenter, buttonWidth, buttonHeight);
+				DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_MenuTextFormat, xCenter + buttonWidth / 2, yCenter, buttonWidth, buttonHeight);
+			}
+			else
+			{
+				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 10.0f, 10.0f, 100.0f, 50.0f);
+				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 110.0f, 10.0f, 100.0f, 50.0f);
+				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 210.0f, 10.0f, 100.0f, 50.0f);
+			}
 
 			m_RenderTarget->SetTransform(previousTransform);
 
@@ -450,6 +500,10 @@ namespace NNVisualizer {
 		{
 			Visualizer* pVisualizer = reinterpret_cast<Visualizer*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 			bool wasHandled = false;
+			POINT screenCursorPos;
+			GetCursorPos(&screenCursorPos);
+			POINT worldCursorPos = screenCursorPos;
+			ScreenToClient(hwnd, &worldCursorPos);
 
 			if(pVisualizer)
 			{
@@ -467,17 +521,13 @@ namespace NNVisualizer {
 				case WM_MOUSEWHEEL:
 				{
 					int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-					POINT cursorPos;
-					GetCursorPos(&cursorPos);
-					ScreenToClient(hwnd, &cursorPos);
-
 					if(delta > 0)
 					{
-						pVisualizer->ZoomIn(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
+						pVisualizer->ZoomIn(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
 					}
 					else
 					{
-						pVisualizer->ZoomOut(static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y));
+						pVisualizer->ZoomOut(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
 					}
 
 					pVisualizer->UpdateTextFormat();
@@ -487,40 +537,18 @@ namespace NNVisualizer {
 				}
 				case WM_KEYDOWN:
 				{
-					switch(wParam)
-					{
-					case VK_LEFT:
-						pVisualizer->MoveCameraLeft(10.0f);
-						break;
-					case VK_RIGHT:
-						pVisualizer->MoveCameraRight(10.0f);
-						break;
-					case VK_UP:
-						pVisualizer->MoveCameraUp(10.0f);
-						break;
-					case VK_DOWN:
-						pVisualizer->MoveCameraDown(10.0f);
-						break;
-					default:
-						pVisualizer->m_SelectedTextField->KeyStroke(wParam);
-					}
-
+					pVisualizer->HandleKeyStroke(wParam, lParam);
 					result = 0;
 					wasHandled = true;
 					break;
 				}
 				case WM_LBUTTONDOWN:
 				{
-					POINT screenCursorPos;
-					GetCursorPos(&screenCursorPos);
-					POINT worldCursorPos = screenCursorPos;
-					ScreenToClient(hwnd, &worldCursorPos);
+
 					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
-					pVisualizer->CheckNodeClick(worldCursorPos.x, worldCursorPos.y);
+
 					pVisualizer->HandleMouseClick(worldCursorPos);
 
-
-					// HANDLE
 					result = 0;
 					wasHandled = true;
 					break;
@@ -571,30 +599,35 @@ namespace NNVisualizer {
 
 		return result;
 	}
-
-
-	void Visualizer::MoveCameraLeft(float distance)
+	void Visualizer::HandleKeyStroke(WPARAM wParam, LPARAM lParam)
 	{
-		m_Camera->MoveLeft(distance);
-		InvalidateRect(m_hwnd, NULL, FALSE);
+		if(HandleTextFieldKeyStroke(m_SelectedTextField, wParam, lParam)) return;
+		if(HandleCameraMovementKeyStroke(wParam, 10.0f)) return;
+	}
+	bool Visualizer::HandleCameraMovementKeyStroke(WPARAM wParam, float distance)
+	{
+		switch(wParam)
+		{
+		case VK_LEFT:
+			m_Camera->MoveLeft(10.0f);
+			InvalidateRect(m_hwnd, NULL, FALSE);
+			return true;
+		case VK_RIGHT:
+			m_Camera->MoveRight(10.0f);
+			InvalidateRect(m_hwnd, NULL, FALSE);
+			return true;
+		case VK_UP:
+			m_Camera->MoveUp(10.0f);
+			InvalidateRect(m_hwnd, NULL, FALSE);
+			return true;
+		case VK_DOWN:
+			m_Camera->MoveDown(10.0f);
+			InvalidateRect(m_hwnd, NULL, FALSE);
+			return true;
+		}
+		return false;
 	}
 
-	void Visualizer::MoveCameraRight(float distance)
-	{
-		m_Camera->MoveRight(distance);
-		InvalidateRect(m_hwnd, NULL, FALSE);
-	}
-	void Visualizer::MoveCameraUp(float distance)
-	{
-		m_Camera->MoveUp(distance);
-		InvalidateRect(m_hwnd, NULL, FALSE);
-	}
-
-	void Visualizer::MoveCameraDown(float distance)
-	{
-		m_Camera->MoveDown(distance);
-		InvalidateRect(m_hwnd, NULL, FALSE);
-	}
 
 	void Visualizer::ZoomIn(float cursorX, float cursorY)
 	{
@@ -613,21 +646,26 @@ namespace NNVisualizer {
 
 	void Visualizer::HandleMouseClick(const POINT& worldCursorPos)
 	{
+
 		//! Handle button clicks
-		if(HandleButtonClick(m_StartButton, Utils::LoopState::Running, m_LoopState, worldCursorPos.x, worldCursorPos.y)) return;
-		if(HandleButtonClick(m_StepButton, Utils::LoopState::Stepping, m_LoopState, worldCursorPos.x, worldCursorPos.y)) return;
-		if(HandleButtonClick(m_StopButton, Utils::LoopState::Stopped, m_LoopState, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleButtonClick(worldCursorPos.x, worldCursorPos.y)) return;
 
 		//! Handle text field selections
-		if(HandleTextFieldSelection(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-		if(HandleTextFieldSelection(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-		if(HandleTextFieldSelection(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleTextFieldClick(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		if(HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 
+		//! Handle node click
+		if(HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
+
+		//! If not handled by any component than reset text field
+		m_SelectedTextField = nullptr;
 	}
 
-
-	void Visualizer::CheckNodeClick(int mouseX, int mouseY)
+	bool Visualizer::HandleNodeClick(int mouseX, int mouseY)
 	{
+		if(!m_Initialized)
+			return false;
 		const auto& layers = m_NeuralNetwork->GetLayers();
 		D2D1_POINT_2F worldCursorPos = m_Camera->GetCursorWorldPosition(D2D1::Point2F(mouseX, mouseY));
 		for(const auto& layer : layers)
@@ -661,7 +699,7 @@ namespace NNVisualizer {
 					m_ChoosenNeuron = layer->GetNeurons()[neuronIndex].get();
 					std::cout << "Node clicked: Layer " << layerIndex << " Neuron " << neuronIndex << std::endl;
 					InvalidateRect(m_hwnd, NULL, FALSE);
-					return;
+					return true;
 				}
 			}
 		}
@@ -673,8 +711,49 @@ namespace NNVisualizer {
 		}
 	}
 
+	bool Visualizer::HandleButtonClick(float cursorX, float cursorY)
+	{
+		if(m_Initialized)
+		{
+			if(m_StartButton->IsClicked(cursorX, cursorY))
+			{
+				m_LoopState = Utils::LoopState::Running;
+				return true;
+			}
+			if(m_StopButton->IsClicked(cursorX, cursorY))
+			{
+				m_LoopState = Utils::LoopState::Stopped;
+				return true;
+			}
+			if(m_StepButton->IsClicked(cursorX, cursorY))
+			{
+				m_LoopState = Utils::LoopState::Stepping;
+				return true;
+			}
+		}
+		else
+		{
+			if(m_InitializeButton->IsClicked(cursorX, cursorY))
+			{
+				std::unique_ptr<NNCore::NeuralNetwork> myNN;
+				try
+				{
+					myNN = std::make_unique<NNCore::NeuralNetwork>(Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()), NNCore::NeuronActivation::FastSigmoid);
 
-
+				}
+				catch(std::invalid_argument exception)
+				{
+					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+					m_ExceptionMessage = converter.from_bytes(exception.what());
+					return true;
+				}
+				myNN->Train(1);
+				this->SetNN(std::move(myNN));
+				m_Initialized = true;
+			}
+		}
+		return false;
+	}
 
 	void Visualizer::UpdateTextFormat()
 	{
@@ -693,7 +772,6 @@ namespace NNVisualizer {
 
 		if(SUCCEEDED(hr))
 		{
-			// Center the text horizontally and vertically.
 			m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 			m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 		}
@@ -706,6 +784,8 @@ namespace NNVisualizer {
 			// error here, because the error will be returned again
 			// the next time EndDraw is called.
 			m_RenderTarget->Resize(D2D1::SizeU(width, height));
+			m_ViewportWidth = width;
+			m_ViewportHeight = height;
 		}
 	}
 	void Visualizer::DiscardDeviceResources()
@@ -713,6 +793,8 @@ namespace NNVisualizer {
 		SafeRelease(&m_RenderTarget);
 		SafeRelease(&m_DWriteFactory);
 		SafeRelease(&m_TextFormat);
+		SafeRelease(&m_MenuTextFormat);
+		SafeRelease(&m_ErrorTextFormat);
 		SafeRelease(&m_LooseWeightBrush);
 		SafeRelease(&m_MediumWeightBrush);
 		SafeRelease(&m_TightWeightBrush);

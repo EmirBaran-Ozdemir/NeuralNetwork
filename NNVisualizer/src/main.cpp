@@ -40,8 +40,7 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
 
         //! Main program loop 
 
-        auto myNN = std::make_unique<NNCore::NeuralNetwork>(topology, activationFunction, inputValues, outputValues);
-        myNN->Train(1);
+
 
         // Visualizer setup
         if(SUCCEEDED(CoInitialize(NULL))) {
@@ -49,7 +48,6 @@ int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, i
                 NNVisualizer::Visualizer app;
 
                 if(SUCCEEDED(app.Initialize())) {
-                    app.SetNN(std::move(myNN));
                     app.RunMessageLoop();
                 }
             }

@@ -4,9 +4,14 @@
 
 namespace NNCore {
 
-	NeuralNetwork::NeuralNetwork(const std::vector<int>& topology, NeuronActivation::ActivationFunction activationFunction, std::vector<double> inputValues, std::vector<double> outputValues)
+	NeuralNetwork::NeuralNetwork(const std::vector<int>& topology, const std::vector<double>& startingInputValues, const std::vector<double>& targetOutputValues, NeuronActivation::ActivationFunction activationFunction)
 		: m_Topology(topology), m_ActivationFunction(activationFunction)
 	{
+		if(m_Topology.size() <= 0)
+		{
+			throw std::invalid_argument("Should give valid size of topology");
+		}
+
 		//! Initialize layers
 		for(const auto& layerSize : m_Topology) {
 			m_Layers.emplace_back(std::make_unique<Layer>(layerSize, m_ActivationFunction));
@@ -16,11 +21,12 @@ namespace NNCore {
 		for(size_t i = 0; i < m_Layers.size() - 1; ++i) {
 			m_Weights.emplace_back(std::make_unique<Utils::Matrix>(m_Layers[i]->GetSize(), m_Layers[i + 1]->GetSize(), true));
 		}
-		if(inputValues.size() != m_Layers[0]->GetSize() || outputValues.size() != m_Layers.back()->GetSize()) {
+
+		if(startingInputValues.size() != m_Layers[0]->GetSize() || targetOutputValues.size() != m_Layers.back()->GetSize()) {
 			throw std::invalid_argument("Input or output size does not match the network topology.");
 		}
-		m_TargetOutputValues = outputValues;
-		m_Layers[0].get()->SetLayer(inputValues);
+		m_TargetOutputValues = targetOutputValues;
+		m_Layers[0].get()->SetLayer(startingInputValues);
 	}
 
 	void NeuralNetwork::Train(int epochs)

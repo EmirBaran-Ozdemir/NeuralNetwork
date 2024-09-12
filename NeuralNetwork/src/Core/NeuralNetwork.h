@@ -10,7 +10,7 @@ namespace NNCore {
 	class NN_API NeuralNetwork {
 
 	public:
-		NeuralNetwork(const std::vector<int>& topology, NeuronActivation::ActivationFunction activationFunction, std::vector<double> inputValues, std::vector<double> outputValues);
+		NeuralNetwork(const std::vector<int>& topology, const std::vector<double>& startingInputValues, const std::vector<double>& targetOutputValues, NeuronActivation::ActivationFunction activationFunction);
 		NeuralNetwork(const NeuralNetwork&) = delete;
 		NeuralNetwork& operator=(const NeuralNetwork&) = delete;
 		~NeuralNetwork() = default;

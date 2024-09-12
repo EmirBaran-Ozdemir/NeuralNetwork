@@ -18,27 +18,42 @@ namespace Components {
         const std::wstring& textToDraw = m_TextInput.empty() ? m_Placeholder : m_TextInput;
         renderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), textFormat, m_Rect, brush);
 	}
-    void TextField::KeyStroke(WPARAM wParam)
+    bool TextField::KeyStroke(WPARAM wParam, LPARAM lParam)
     {
-        if(wParam == VK_BACK)
+        BYTE keyboardState[256];
+        bool result = GetKeyboardState(keyboardState);
+        if (!result) {
+            return false;
+        }
+        wchar_t translatedChar[2] = { 0 };
+        int unicodeResult= ToUnicode(wParam, (lParam >> 16) & 0xFF, keyboardState, translatedChar, 2, 0);
+
+        if(unicodeResult == 1) // A single character was translated
         {
-            if(!m_TextInput.empty())
+            // Handle backspace
+            if(wParam == VK_BACK)
             {
-                m_TextInput.pop_back();  
+                if(!m_TextInput.empty())
+                {
+                    m_TextInput.pop_back();
+                }
+                return true;
+            }
+            // Add the translated character to the input
+            else if((translatedChar[0] >= L'0' && translatedChar[0] <= L'9') ||
+                (translatedChar[0] >= L'A' && translatedChar[0] <= L'Z') ||
+                (translatedChar[0] >= L'a' && translatedChar[0] <= L'z') ||
+                translatedChar[0] == L' ' || // space
+                translatedChar[0] == L',' || // comma
+                translatedChar[0] == L'.')   // period
+            {
+                m_TextInput += translatedChar[0];
+                return true;
             }
         }
-        else if((wParam >= '0' && wParam <= '9') ||
-            (wParam >= 'A' && wParam <= 'Z') ||
-            (wParam >= 'a' && wParam <= 'z') ||
-            wParam == VK_SPACE ||
-            wParam == VK_OEM_PERIOD ||
-            wParam == VK_OEM_COMMA ||
-            wParam == VK_OEM_MINUS ||
-            wParam == VK_OEM_PLUS) 
-        {
-            m_TextInput += static_cast<wchar_t>(wParam);
-        }
+        return false;
     }
+
 
 	bool TextField::IsClicked(float mouseX, float mouseY) const
 	{
