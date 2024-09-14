@@ -58,11 +58,14 @@ namespace NNVisualizer {
 			ID2D1HwndRenderTarget* renderTarget,
 			ID2D1SolidColorBrush* normalBrush,
 			ID2D1SolidColorBrush* selectedBrush,
+			ID2D1SolidColorBrush* normalTextBrush,
+			ID2D1SolidColorBrush* selectedTextBrush,
 			IDWriteTextFormat* textFormat,
 			float x, float y, float width, float height)
 		{
 			bool isSelected = textField.get() == selectedTextField.get();
-			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, textFormat, x, y, width, height, isSelected);
+
+			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat, x, y, width, height, isSelected);
 		}
 
 		static bool HandleTextFieldKeyStroke(std::shared_ptr<Components::TextField>& selectedTextField, WPARAM wParam, LPARAM lParam)
@@ -86,19 +89,22 @@ namespace NNVisualizer {
 		ID2D1SolidColorBrush* m_GrayBrush;
 		ID2D1SolidColorBrush* m_BlackBrush;
 		ID2D1SolidColorBrush* m_LimeGreenBrush;
+		ID2D1SolidColorBrush* m_WhiteBrush;
 
 		Renderer::Camera* m_Camera;
 
 		//! Runtime data
 		bool m_Initialized = false;
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
+		NNCore::Neuron* m_ChoosenNeuron = nullptr;
+
+		//! NN Properties
 		std::wstring m_ExceptionMessage = L"";
+		NNCore::NeuronActivation::ActivationFunction m_ActivationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
+
 		int m_ViewportHeight;
 		int m_ViewportWidth;
 		float m_MinTextSize = 2.0f;
-		bool m_AnyNeuronChoosed = false;
-		NNCore::Neuron* m_ChoosenNeuron = nullptr;
-
 		float m_VerticalSpacing;
 		float m_HorizontalSpacing;
 		float m_NodeRadius = 10.0f;
@@ -111,6 +117,8 @@ namespace NNVisualizer {
 		std::unique_ptr<Components::Button> m_StepButton;
 		std::unique_ptr<Components::Button> m_StopButton;
 		std::unique_ptr<Components::Button> m_InitializeButton;
+		
+		std::unique_ptr<Components::Dropdown> m_ActivationFunctionDropdown;
 
 		std::shared_ptr<Components::TextField> m_TopologyTextField;
 		std::shared_ptr<Components::TextField> m_StartingInputsTextField;

@@ -17,6 +17,7 @@ namespace NNVisualizer {
 		m_BlackBrush(NULL),
 		m_LimeGreenBrush(NULL),
 		m_GrayBrush(NULL),
+		m_WhiteBrush(NULL),
 		m_HorizontalSpacing(0),
 		m_VerticalSpacing(0),
 		m_Camera(nullptr),
@@ -27,16 +28,20 @@ namespace NNVisualizer {
 
 	Visualizer::~Visualizer()
 	{
-		SafeRelease(&m_Direct2dFactory);
-		SafeRelease(&m_DWriteFactory);
 		SafeRelease(&m_RenderTarget);
+		SafeRelease(&m_DWriteFactory);
 		SafeRelease(&m_TextFormat);
 		SafeRelease(&m_MenuTextFormat);
 		SafeRelease(&m_ErrorTextFormat);
 		SafeRelease(&m_LooseWeightBrush);
 		SafeRelease(&m_MediumWeightBrush);
 		SafeRelease(&m_TightWeightBrush);
+		SafeRelease(&m_GrayBrush);
+		SafeRelease(&m_BlackBrush);
+		SafeRelease(&m_WhiteBrush);
+		SafeRelease(&m_LimeGreenBrush);
 	}
+
 	HRESULT Visualizer::Initialize()
 	{
 		HRESULT hr = S_OK;
@@ -110,6 +115,7 @@ namespace NNVisualizer {
 		}
 		return hr;
 	}
+
 	HRESULT Visualizer::CreateDeviceIndependentResources()
 	{
 		HRESULT hr = S_OK;
@@ -125,6 +131,7 @@ namespace NNVisualizer {
 		}
 		return hr;
 	}
+
 	HRESULT Visualizer::CreateDeviceResources()
 	{
 		HRESULT hr = S_OK;
@@ -194,6 +201,14 @@ namespace NNVisualizer {
 				);
 				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
 			}
+			if(SUCCEEDED(hr))
+			{
+				hr = m_RenderTarget->CreateSolidColorBrush(
+					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::White)),
+					&m_WhiteBrush
+				);
+				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
+			}
 
 			if(SUCCEEDED(hr))
 			{
@@ -233,6 +248,7 @@ namespace NNVisualizer {
 			m_StartButton = std::make_unique<Components::Button>(L"Start");
 			m_StepButton = std::make_unique<Components::Button>(L"Step");
 			m_StopButton = std::make_unique<Components::Button>(L"Stop");
+			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"ActivationFunction", NNCore::NeuronActivation::GetAllActivationFunctions());
 			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology");
 			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"StartingInputs");
 			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"TargetOutputs");
@@ -247,7 +263,6 @@ namespace NNVisualizer {
 				m_ErrorTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 			}
 		}
-
 		return hr;
 	}
 
@@ -285,6 +300,7 @@ namespace NNVisualizer {
 			DispatchMessage(&msg);
 		}
 	}
+
 	HRESULT Visualizer::OnRender()
 	{
 		HRESULT hr = CreateDeviceResources();
@@ -295,7 +311,6 @@ namespace NNVisualizer {
 			D2D1_MATRIX_4X4_F viewMatrix = m_Camera->GetViewMatrix();
 			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
 			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-
 
 			if(m_NeuralNetwork != nullptr)
 			{
@@ -311,7 +326,6 @@ namespace NNVisualizer {
 					break;
 				}
 			}
-
 
 			D2D1_MATRIX_3X2_F previousTransform;
 			m_RenderTarget->GetTransform(&previousTransform);
@@ -335,14 +349,21 @@ namespace NNVisualizer {
 						m_BlackBrush
 					);
 				}
-				float buttonWidth = 200.0f;
-				float buttonHeight = 50.0f;
-				float xCenter = static_cast<float>(m_ViewportWidth) / 2;
-				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (buttonHeight * 3);
-				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter - buttonWidth / 2, yCenter - 80.0f, buttonWidth, buttonHeight);
-				DrawTextField(m_TopologyTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_MenuTextFormat, xCenter - (buttonWidth + buttonWidth / 2) , yCenter, buttonWidth, buttonHeight);
-				DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_MenuTextFormat, xCenter - buttonWidth / 2, yCenter, buttonWidth, buttonHeight);
-				DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_MenuTextFormat, xCenter + buttonWidth / 2, yCenter, buttonWidth, buttonHeight);
+				float componentWidth = 200.0f;
+				float componentHeight = 50.0f;
+				float componentXSpacing = 10.0f;
+				// has 4 buttons so move center 2 buttons left
+				float xCenter = static_cast<float>(m_ViewportWidth) / 2 - ((componentWidth * 2) + (componentXSpacing * 1.5f));
+				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (200.0f);
+				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + (componentWidth * 1.5f + componentXSpacing * 1.33), yCenter - 80.0f, componentWidth, componentHeight);
+				float componentXOffset = 0.0f;
+				m_ActivationFunctionDropdown->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				componentXOffset += componentWidth + componentXSpacing;
+				this->DrawTextField(m_TopologyTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				componentXOffset += componentWidth + componentXSpacing;
+				this->DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				componentXOffset += componentWidth + componentXSpacing;
+				this->DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 			}
 			else
 			{
@@ -363,7 +384,6 @@ namespace NNVisualizer {
 
 		return hr;
 	}
-
 
 	void Visualizer::LoopNN()
 	{
@@ -422,11 +442,10 @@ namespace NNVisualizer {
 		}
 	}
 
-
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen)
 	{
 		ID2D1SolidColorBrush* brush;
-		if(!m_AnyNeuronChoosed || isChoosen)
+		if(m_ChoosenNeuron == nullptr || isChoosen)
 		{
 			brush = m_BlackBrush;
 		}
@@ -462,7 +481,7 @@ namespace NNVisualizer {
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen)
 	{
 		ID2D1SolidColorBrush* brush;
-		if(!m_AnyNeuronChoosed || isConnectedToChoosen)
+		if(m_ChoosenNeuron == nullptr || isConnectedToChoosen)
 		{
 			if(weight < 0.33)
 			{
@@ -481,10 +500,8 @@ namespace NNVisualizer {
 		{
 			brush = m_GrayBrush;
 		}
-
 		m_RenderTarget->DrawLine(start, end, brush, 0.5f);
 	}
-
 
 	LRESULT CALLBACK Visualizer::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
@@ -590,20 +607,20 @@ namespace NNVisualizer {
 				}
 				}
 			}
-
 			if(!wasHandled)
 			{
 				result = DefWindowProc(hwnd, message, wParam, lParam);
 			}
 		}
-
 		return result;
 	}
+
 	void Visualizer::HandleKeyStroke(WPARAM wParam, LPARAM lParam)
 	{
 		if(HandleTextFieldKeyStroke(m_SelectedTextField, wParam, lParam)) return;
 		if(HandleCameraMovementKeyStroke(wParam, 10.0f)) return;
 	}
+
 	bool Visualizer::HandleCameraMovementKeyStroke(WPARAM wParam, float distance)
 	{
 		switch(wParam)
@@ -627,7 +644,6 @@ namespace NNVisualizer {
 		}
 		return false;
 	}
-
 
 	void Visualizer::ZoomIn(float cursorX, float cursorY)
 	{
@@ -695,7 +711,6 @@ namespace NNVisualizer {
 				if(distance <= m_NodeRadius)
 				{
 					clickedOnAny = true;
-					m_AnyNeuronChoosed = true;
 					m_ChoosenNeuron = layer->GetNeurons()[neuronIndex].get();
 					std::cout << "Node clicked: Layer " << layerIndex << " Neuron " << neuronIndex << std::endl;
 					InvalidateRect(m_hwnd, NULL, FALSE);
@@ -706,7 +721,6 @@ namespace NNVisualizer {
 		if(!clickedOnAny)
 		{
 			m_ChoosenNeuron = nullptr;
-			m_AnyNeuronChoosed = false;
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	}
@@ -733,13 +747,22 @@ namespace NNVisualizer {
 		}
 		else
 		{
+			if(m_ActivationFunctionDropdown->IsClicked(cursorX, cursorY))
+			{
+				int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex();
+				NNCore::NeuronActivation::ActivationFunction activationFunction;
+				if(activationFunctionIndex >= 0 && activationFunctionIndex <= NNCore::NeuronActivation::ReLU)
+				{
+					m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
+				}
+				return true;
+			}
 			if(m_InitializeButton->IsClicked(cursorX, cursorY))
 			{
 				std::unique_ptr<NNCore::NeuralNetwork> myNN;
 				try
 				{
-					myNN = std::make_unique<NNCore::NeuralNetwork>(Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()), NNCore::NeuronActivation::FastSigmoid);
-
+					myNN = std::make_unique<NNCore::NeuralNetwork>(Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()), m_ActivationFunction);
 				}
 				catch(std::invalid_argument exception)
 				{
@@ -800,7 +823,8 @@ namespace NNVisualizer {
 		SafeRelease(&m_TightWeightBrush);
 		SafeRelease(&m_GrayBrush);
 		SafeRelease(&m_BlackBrush);
+		SafeRelease(&m_WhiteBrush);
+		SafeRelease(&m_LimeGreenBrush);
 
 	}
-
 }

@@ -4,7 +4,7 @@ namespace Components {
 	TextField::TextField(const std::wstring& placeholder) :m_Placeholder(placeholder)
 	{
 	}
-	void TextField::Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, IDWriteTextFormat* textFormat, float x, float y, float width, float height, bool isChoosen)
+	void TextField::Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, ID2D1SolidColorBrush* textBrush, IDWriteTextFormat* textFormat, float x, float y, float width, float height, bool isChoosen)
 	{
 		m_Rect = D2D1::RectF(x, y, x + width, y + height);
         if(isChoosen)
@@ -16,7 +16,7 @@ namespace Components {
             renderTarget->DrawRectangle(m_Rect, brush);
         }
         const std::wstring& textToDraw = m_TextInput.empty() ? m_Placeholder : m_TextInput;
-        renderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), textFormat, m_Rect, brush);
+        renderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), textFormat, m_Rect, textBrush);
 	}
     bool TextField::KeyStroke(WPARAM wParam, LPARAM lParam)
     {

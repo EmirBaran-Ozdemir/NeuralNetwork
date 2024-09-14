@@ -20,6 +20,17 @@ namespace NNCore {
 		ActivationFunction GetActivationFunction() const { return s_ActivationFunction; }
 		static double Activate(double value, ActivationFunction activationFunction);
 		static double Derivate(double value, ActivationFunction activationFunction);
+		static const std::vector<std::wstring> GetAllActivationFunctions()
+		{
+			std::vector<std::wstring> activationFunctions;
+
+			activationFunctions.push_back(L"Null");
+			activationFunctions.push_back(L"Sigmoid");
+			activationFunctions.push_back(L"FastSigmoid");
+			activationFunctions.push_back(L"ReLU");
+
+			return activationFunctions;
+		}
 	private:
 		static ActivationFunction s_ActivationFunction;
 
