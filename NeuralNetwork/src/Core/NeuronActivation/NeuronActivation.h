@@ -24,7 +24,6 @@ namespace NNCore {
 		{
 			std::vector<std::wstring> activationFunctions;
 
-			activationFunctions.push_back(L"Null");
 			activationFunctions.push_back(L"Sigmoid");
 			activationFunctions.push_back(L"FastSigmoid");
 			activationFunctions.push_back(L"ReLU");

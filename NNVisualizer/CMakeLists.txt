@@ -25,7 +25,7 @@ file(GLOB VISUALIZER_SOURCE_FILES "src/*.cpp")
 add_executable(NNVisualizer
     src/main.cpp
     ${VISUALIZER_SOURCE_FILES}
- "src/NNVisualizer/Visualizer.h" "src/NNVisualizer/Visualizer.cpp" "src/NNVisualizer/Utils/DirectxUtilities.h"  "src/NNVisualizer/Renderer/Camera.h" "src/NNVisualizer/Renderer/Camera.cpp" "src/NNVisualizer/Components/Button.h" "src/NNVisualizer/Components/Button.cpp" "src/NNVisualizer/Utils/Utils.h" "src/NNVisualizer/Utils/LoopState.h" "src/NNVisualizer/Components/TextField.h" "src/NNVisualizer/Components/TextField.cpp" "src/NNVisualizer/Components/Components.h" "src/NNVisualizer/Components/Dropdown.h" "src/NNVisualizer/Components/Dropdown.cpp")
+ "src/NNVisualizer/Visualizer.h" "src/NNVisualizer/Visualizer.cpp" "src/NNVisualizer/Utils/DirectxUtilities.h"  "src/NNVisualizer/Renderer/Camera.h" "src/NNVisualizer/Renderer/Camera.cpp" "src/NNVisualizer/Components/Button.h" "src/NNVisualizer/Components/Button.cpp" "src/NNVisualizer/Utils/Utils.h" "../NeuralNetwork/src/Core/Utils/LoopState.h" "src/NNVisualizer/Components/TextField.h" "src/NNVisualizer/Components/TextField.cpp" "src/NNVisualizer/Components/Components.h" "src/NNVisualizer/Components/Dropdown.h" "src/NNVisualizer/Components/Dropdown.cpp")
 
 # Link against NeuralNetwork and other necessary libraries
 target_link_libraries(NNVisualizer

@@ -12,13 +12,12 @@ namespace Utils {
             std::wstring item;
 
             while(std::getline(wstream, item, delimiter)) {
-                result.push_back(std::stoi(item));  // Convert each split part to int
+                result.push_back(std::stoi(item));  
             }
 
             return result;
         }
 
-        // Utility to split wstring by a delimiter and convert to a vector of doubles
         static std::vector<double> ParseWStringToDoubleVector(const std::wstring& wstr, wchar_t delimiter = L',')
         {
             std::vector<double> result;
@@ -26,9 +25,14 @@ namespace Utils {
             std::wstring item;
 
             while(std::getline(wstream, item, delimiter)) {
-                result.push_back(std::stod(item));  // Convert each split part to double
+                result.push_back(std::stod(item)); 
             }
 
+            return result;
+        }
+        static int ParseWStringToInt(const std::wstring& wstr)
+        {
+            int result = std::stod(wstr);
             return result;
         }
 

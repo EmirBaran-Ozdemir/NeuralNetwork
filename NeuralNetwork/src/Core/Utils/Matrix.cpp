@@ -5,13 +5,13 @@ namespace Utils {
 
 	Matrix::Matrix(int numRows, int numCols, bool isRandomized) : m_NumRows(numRows), m_NumCols(numCols)
 	{
-		for (int i = 0; i < m_NumRows; i++)
+		for(int i = 0; i < m_NumRows; i++)
 		{
 			std::vector<double> colValues;
-			for (int j = 0; j < m_NumCols; j++)
+			for(int j = 0; j < m_NumCols; j++)
 			{
 				double initValue = 0.00;
-				if (isRandomized)
+				if(isRandomized)
 				{
 					initValue = Utils::Random::GetDoubleZeroToOne();
 				}
@@ -25,9 +25,9 @@ namespace Utils {
 	{
 		std::vector<std::vector<double>> transposed(m_NumCols, std::vector<double>(m_NumRows));
 
-		for (int i = 0; i < m_NumRows; ++i)
+		for(int i = 0; i < m_NumRows; ++i)
 		{
-			for (int j = 0; j < m_NumCols; ++j)
+			for(int j = 0; j < m_NumCols; ++j)
 			{
 				transposed[j][i] = m_Values[i][j];
 			}
@@ -43,6 +43,13 @@ namespace Utils {
 		m_Values = matrix;
 		m_NumRows = matrix.size();
 		m_NumCols = matrix.at(0).size();
+	}
+
+	void Matrix::SetMatrix(const Matrix& matrix)
+	{
+		m_Values = matrix.GetMatrixValues();
+		m_NumRows = matrix.GetNumRows();
+		m_NumCols = matrix.GetNumCols();
 	}
 
 }

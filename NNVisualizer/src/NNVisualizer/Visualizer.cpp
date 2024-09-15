@@ -40,6 +40,8 @@ namespace NNVisualizer {
 		SafeRelease(&m_BlackBrush);
 		SafeRelease(&m_WhiteBrush);
 		SafeRelease(&m_LimeGreenBrush);
+		if(m_TrainingThread.joinable())
+			m_TrainingThread.join();
 	}
 
 	HRESULT Visualizer::Initialize()
@@ -248,10 +250,11 @@ namespace NNVisualizer {
 			m_StartButton = std::make_unique<Components::Button>(L"Start");
 			m_StepButton = std::make_unique<Components::Button>(L"Step");
 			m_StopButton = std::make_unique<Components::Button>(L"Stop");
-			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"ActivationFunction", NNCore::NeuronActivation::GetAllActivationFunctions());
+			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions());
 			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology");
-			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"StartingInputs");
-			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"TargetOutputs");
+			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"Starting Inputs");
+			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outpus");
+			m_MaxEpochTextField = std::make_shared<Components::TextField>(L"Max Epoch");
 
 			if(SUCCEEDED(hr))
 			{
@@ -315,16 +318,7 @@ namespace NNVisualizer {
 			if(m_NeuralNetwork != nullptr)
 			{
 				LoopNN();
-				switch(m_LoopState)
-				{
-				case Utils::LoopState::Running:
-					break;
-				case Utils::LoopState::Stepping:
-					m_LoopState = Utils::LoopState::Stopped;
-					break;
-				case Utils::LoopState::Stopped:
-					break;
-				}
+
 			}
 
 			D2D1_MATRIX_3X2_F previousTransform;
@@ -353,9 +347,9 @@ namespace NNVisualizer {
 				float componentHeight = 50.0f;
 				float componentXSpacing = 10.0f;
 				// has 4 buttons so move center 2 buttons left
-				float xCenter = static_cast<float>(m_ViewportWidth) / 2 - ((componentWidth * 2) + (componentXSpacing * 1.5f));
+				float xCenter = static_cast<float>(m_ViewportWidth) / 2 - ((componentWidth * 2.5f) + (componentXSpacing * 2.0f));
 				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (200.0f);
-				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + (componentWidth * 1.5f + componentXSpacing * 1.33), yCenter - 80.0f, componentWidth, componentHeight);
+				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + (componentWidth * 2.0f + componentXSpacing * 2.0f), yCenter - 80.0f, componentWidth, componentHeight);
 				float componentXOffset = 0.0f;
 				m_ActivationFunctionDropdown->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
@@ -364,6 +358,8 @@ namespace NNVisualizer {
 				this->DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
 				this->DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				componentXOffset += componentWidth + componentXSpacing;
+				this->DrawTextField(m_MaxEpochTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 			}
 			else
 			{
@@ -403,8 +399,8 @@ namespace NNVisualizer {
 				float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
-				double neuronValue = layer->GetNeurons()[neuronIndex]->GetActivatedValue();
-				if(m_ChoosenNeuron != nullptr && (layer->GetNeurons()[neuronIndex].get() == m_ChoosenNeuron))
+				double neuronValue = layer->GetNeurons()[neuronIndex]->GetBaseValue();
+				if((m_ChoosenNeuronRowCol.first == layerIndex) && (m_ChoosenNeuronRowCol.second == neuronIndex))
 				{
 					isChoosen = true;
 				}
@@ -431,7 +427,7 @@ namespace NNVisualizer {
 						D2D1_POINT_2F end = D2D1::Point2F(xOffset + m_HorizontalSpacing - m_NodeRadius, yOffsetEnd);
 
 						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex);
-						if(m_ChoosenNeuron != nullptr && (layer->GetNeurons()[neuronIndex].get() == m_ChoosenNeuron || nextLayer->GetNeurons()[nextNeuronIndex].get() == m_ChoosenNeuron))
+						if(((m_ChoosenNeuronRowCol.first == layerIndex) && (m_ChoosenNeuronRowCol.second == neuronIndex)) || ((m_ChoosenNeuronRowCol.first == layerIndex + 1) && (m_ChoosenNeuronRowCol.second == nextNeuronIndex)))
 						{
 							isChoosen = true;
 						}
@@ -445,7 +441,7 @@ namespace NNVisualizer {
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen)
 	{
 		ID2D1SolidColorBrush* brush;
-		if(m_ChoosenNeuron == nullptr || isChoosen)
+		if(((m_ChoosenNeuronRowCol.first == -1) && (m_ChoosenNeuronRowCol.second == -1)) || isChoosen)
 		{
 			brush = m_BlackBrush;
 		}
@@ -481,7 +477,7 @@ namespace NNVisualizer {
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen)
 	{
 		ID2D1SolidColorBrush* brush;
-		if(m_ChoosenNeuron == nullptr || isConnectedToChoosen)
+		if(((m_ChoosenNeuronRowCol.first == -1) && (m_ChoosenNeuronRowCol.second == -1)) || isConnectedToChoosen)
 		{
 			if(weight < 0.33)
 			{
@@ -667,9 +663,13 @@ namespace NNVisualizer {
 		if(HandleButtonClick(worldCursorPos.x, worldCursorPos.y)) return;
 
 		//! Handle text field selections
-		if(HandleTextFieldClick(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-		if(HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-		if(HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		if(!m_Initialized)
+		{
+			if(HandleTextFieldClick(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if(HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if(HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if(HandleTextFieldClick(m_MaxEpochTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+		}
 
 		//! Handle node click
 		if(HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
@@ -711,8 +711,8 @@ namespace NNVisualizer {
 				if(distance <= m_NodeRadius)
 				{
 					clickedOnAny = true;
-					m_ChoosenNeuron = layer->GetNeurons()[neuronIndex].get();
-					std::cout << "Node clicked: Layer " << layerIndex << " Neuron " << neuronIndex << std::endl;
+					m_ChoosenNeuronRowCol.first = layerIndex;
+					m_ChoosenNeuronRowCol.second = neuronIndex;
 					InvalidateRect(m_hwnd, NULL, FALSE);
 					return true;
 				}
@@ -720,7 +720,8 @@ namespace NNVisualizer {
 		}
 		if(!clickedOnAny)
 		{
-			m_ChoosenNeuron = nullptr;
+			m_ChoosenNeuronRowCol.first = -1;
+			m_ChoosenNeuronRowCol.second = -1;
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	}
@@ -731,17 +732,35 @@ namespace NNVisualizer {
 		{
 			if(m_StartButton->IsClicked(cursorX, cursorY))
 			{
-				m_LoopState = Utils::LoopState::Running;
+				if(m_LoopState == Utils::LoopState::Stopped)
+				{
+					m_LoopState = Utils::LoopState::Running;
+					m_NeuralNetwork->ChangeLoopState(m_LoopState);
+					m_TrainingThread = std::thread([&] () {
+						m_NeuralNetwork->ChangeLoopState(Utils::LoopState::Running);
+						m_NeuralNetwork->Train();
+						});
+				}
+				return true;
+			}
+			if(m_StepButton->IsClicked(cursorX, cursorY))
+			{
+				if(m_LoopState == Utils::LoopState::Stopped)
+				{
+					m_LoopState = Utils::LoopState::Stepping;
+					m_NeuralNetwork->ChangeLoopState(m_LoopState);
+					m_NeuralNetwork->Step();
+					m_LoopState = Utils::LoopState::Stopped;
+					m_NeuralNetwork->ChangeLoopState(m_LoopState);
+				}
 				return true;
 			}
 			if(m_StopButton->IsClicked(cursorX, cursorY))
 			{
 				m_LoopState = Utils::LoopState::Stopped;
-				return true;
-			}
-			if(m_StepButton->IsClicked(cursorX, cursorY))
-			{
-				m_LoopState = Utils::LoopState::Stepping;
+				m_NeuralNetwork->ChangeLoopState(m_LoopState);
+				if(m_TrainingThread.joinable())
+					m_TrainingThread.join();
 				return true;
 			}
 		}
@@ -749,12 +768,9 @@ namespace NNVisualizer {
 		{
 			if(m_ActivationFunctionDropdown->IsClicked(cursorX, cursorY))
 			{
-				int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex();
+				int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
 				NNCore::NeuronActivation::ActivationFunction activationFunction;
-				if(activationFunctionIndex >= 0 && activationFunctionIndex <= NNCore::NeuronActivation::ReLU)
-				{
-					m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
-				}
+				m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
 				return true;
 			}
 			if(m_InitializeButton->IsClicked(cursorX, cursorY))
@@ -762,7 +778,13 @@ namespace NNVisualizer {
 				std::unique_ptr<NNCore::NeuralNetwork> myNN;
 				try
 				{
-					myNN = std::make_unique<NNCore::NeuralNetwork>(Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()), Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()), m_ActivationFunction);
+					myNN = std::make_unique<NNCore::NeuralNetwork>(
+						Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()),
+						Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()),
+						Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()),
+						Utils::ValueParser::ParseWStringToInt(m_MaxEpochTextField->GetText()),
+						m_ActivationFunction);
+					this->SetNN(std::move(myNN));
 				}
 				catch(std::invalid_argument exception)
 				{
@@ -770,8 +792,6 @@ namespace NNVisualizer {
 					m_ExceptionMessage = converter.from_bytes(exception.what());
 					return true;
 				}
-				myNN->Train(1);
-				this->SetNN(std::move(myNN));
 				m_Initialized = true;
 			}
 		}

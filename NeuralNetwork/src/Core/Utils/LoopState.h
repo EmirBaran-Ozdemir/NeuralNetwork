@@ -6,6 +6,7 @@ namespace Utils {
     {
         Stopped,
         Running,
+        Paused,
         Stepping
     };
 }

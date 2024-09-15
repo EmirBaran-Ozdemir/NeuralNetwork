@@ -96,7 +96,7 @@ namespace NNVisualizer {
 		//! Runtime data
 		bool m_Initialized = false;
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
-		NNCore::Neuron* m_ChoosenNeuron = nullptr;
+		std::pair<int, int> m_ChoosenNeuronRowCol{ -1,-1 };
 
 		//! NN Properties
 		std::wstring m_ExceptionMessage = L"";
@@ -117,14 +117,15 @@ namespace NNVisualizer {
 		std::unique_ptr<Components::Button> m_StepButton;
 		std::unique_ptr<Components::Button> m_StopButton;
 		std::unique_ptr<Components::Button> m_InitializeButton;
-		
+
 		std::unique_ptr<Components::Dropdown> m_ActivationFunctionDropdown;
 
 		std::shared_ptr<Components::TextField> m_TopologyTextField;
 		std::shared_ptr<Components::TextField> m_StartingInputsTextField;
 		std::shared_ptr<Components::TextField> m_TargetOutputsTextField;
 		std::shared_ptr<Components::TextField> m_SelectedTextField;
+		std::shared_ptr<Components::TextField> m_MaxEpochTextField;
 
-
+		std::thread m_TrainingThread;
 	};
 }

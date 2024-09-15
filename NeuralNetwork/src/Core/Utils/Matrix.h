@@ -13,6 +13,7 @@ namespace Utils {
 		void SetValue(int row, int column, double value) { m_Values[row][column] = value; }
 		double GetValue(int row, int column) const { return m_Values.at(row).at(column); }
 		void SetMatrix(const std::vector<std::vector<double>>& matrix);
+		void SetMatrix(const Matrix& matrix);
 		std::vector<std::vector<double>> GetMatrixValues() const { return m_Values; }
 		size_t GetNumRows() const { return m_NumRows; }
 		size_t GetNumCols() const { return m_NumCols; }

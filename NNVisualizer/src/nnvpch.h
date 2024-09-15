@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <locale>
 #include <codecvt>
+#include <thread>
 
 //! Utilities
 #include "NNVisualizer/Utils/Utils.h"
