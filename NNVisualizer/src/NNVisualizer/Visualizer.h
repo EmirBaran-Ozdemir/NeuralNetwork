@@ -22,7 +22,7 @@ namespace NNVisualizer {
 		HRESULT OnRender();
 		static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 		void LoopNN();
-		void DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen);
+		void DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing);
 		void DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen);
 		bool HandleCameraMovementKeyStroke(WPARAM wParam, float distance);
 		void ZoomIn(float cursorX, float cursorY);
@@ -96,7 +96,7 @@ namespace NNVisualizer {
 		//! Runtime data
 		bool m_Initialized = false;
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
-		std::pair<int, int> m_ChoosenNeuronRowCol{ -1,-1 };
+		std::pair<int, int> m_ChoosenNeuronColRow{ -1,-1 };
 
 		//! NN Properties
 		std::wstring m_ExceptionMessage = L"";

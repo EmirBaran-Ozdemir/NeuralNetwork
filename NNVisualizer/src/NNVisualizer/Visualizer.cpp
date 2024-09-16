@@ -396,15 +396,14 @@ namespace NNVisualizer {
 			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{
 				bool isChoosen = false;
+				bool isProcessing = false;
 				float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
 				double neuronValue = layer->GetNeurons()[neuronIndex]->GetBaseValue();
-				if((m_ChoosenNeuronRowCol.first == layerIndex) && (m_ChoosenNeuronRowCol.second == neuronIndex))
-				{
-					isChoosen = true;
-				}
-				DrawNode(neuronPosition, m_NodeRadius, neuronValue, isChoosen);
+				if((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) isChoosen = true;
+				if(m_NeuralNetwork->GetProcessingNeuronColRow().first == layerIndex && m_NeuralNetwork->GetProcessingNeuronColRow().second == neuronIndex) isProcessing = true;
+				DrawNode(neuronPosition, m_NodeRadius, neuronValue, isChoosen, isProcessing);
 			}
 
 			if(layerIndex < layers.size() - 1)
@@ -427,7 +426,7 @@ namespace NNVisualizer {
 						D2D1_POINT_2F end = D2D1::Point2F(xOffset + m_HorizontalSpacing - m_NodeRadius, yOffsetEnd);
 
 						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex);
-						if(((m_ChoosenNeuronRowCol.first == layerIndex) && (m_ChoosenNeuronRowCol.second == neuronIndex)) || ((m_ChoosenNeuronRowCol.first == layerIndex + 1) && (m_ChoosenNeuronRowCol.second == nextNeuronIndex)))
+						if(((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) || ((m_ChoosenNeuronColRow.first == layerIndex + 1) && (m_ChoosenNeuronColRow.second == nextNeuronIndex)))
 						{
 							isChoosen = true;
 						}
@@ -438,17 +437,22 @@ namespace NNVisualizer {
 		}
 	}
 
-	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen)
+	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing)
 	{
-		ID2D1SolidColorBrush* brush;
-		if(((m_ChoosenNeuronRowCol.first == -1) && (m_ChoosenNeuronRowCol.second == -1)) || isChoosen)
+		ID2D1SolidColorBrush* brush = m_BlackBrush;
+		if(isChoosen)
 		{
 			brush = m_BlackBrush;
 		}
-		else
+		else if(isProcessing)
+		{
+			brush = m_LimeGreenBrush;
+		}
+		else if((m_ChoosenNeuronColRow.first != -1) && (m_ChoosenNeuronColRow.second != -1))
 		{
 			brush = m_GrayBrush;
 		}
+
 
 		D2D1_ELLIPSE ellipse = D2D1::Ellipse(position, radius, radius);
 		m_RenderTarget->DrawEllipse(&ellipse, brush);
@@ -477,7 +481,7 @@ namespace NNVisualizer {
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen)
 	{
 		ID2D1SolidColorBrush* brush;
-		if(((m_ChoosenNeuronRowCol.first == -1) && (m_ChoosenNeuronRowCol.second == -1)) || isConnectedToChoosen)
+		if(((m_ChoosenNeuronColRow.first == -1) && (m_ChoosenNeuronColRow.second == -1)) || isConnectedToChoosen)
 		{
 			if(weight < 0.33)
 			{
@@ -711,8 +715,8 @@ namespace NNVisualizer {
 				if(distance <= m_NodeRadius)
 				{
 					clickedOnAny = true;
-					m_ChoosenNeuronRowCol.first = layerIndex;
-					m_ChoosenNeuronRowCol.second = neuronIndex;
+					m_ChoosenNeuronColRow.first = layerIndex;
+					m_ChoosenNeuronColRow.second = neuronIndex;
 					InvalidateRect(m_hwnd, NULL, FALSE);
 					return true;
 				}
@@ -720,8 +724,8 @@ namespace NNVisualizer {
 		}
 		if(!clickedOnAny)
 		{
-			m_ChoosenNeuronRowCol.first = -1;
-			m_ChoosenNeuronRowCol.second = -1;
+			m_ChoosenNeuronColRow.first = -1;
+			m_ChoosenNeuronColRow.second = -1;
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	}
@@ -748,8 +752,10 @@ namespace NNVisualizer {
 				if(m_LoopState == Utils::LoopState::Stopped)
 				{
 					m_LoopState = Utils::LoopState::Stepping;
-					m_NeuralNetwork->ChangeLoopState(m_LoopState);
-					m_NeuralNetwork->Step();
+					m_TrainingThread = std::thread([&] () {
+						m_NeuralNetwork->ChangeLoopState(Utils::LoopState::Stepping);
+						m_NeuralNetwork->Step();
+						});
 					m_LoopState = Utils::LoopState::Stopped;
 					m_NeuralNetwork->ChangeLoopState(m_LoopState);
 				}

@@ -23,6 +23,7 @@ namespace NNCore {
 		const std::vector<std::unique_ptr<Utils::Matrix>>& GetWeights() const { return m_Weights; }
 		const int GetCurrentEpochIndex() const { return m_CurrentEpochIndex; }
 		const Utils::LoopState GetLoopState() const { return m_LoopState; }
+		const std::pair<int, int> GetProcessingNeuronColRow() const { return m_ProcessingNeuronColRow; }
 	private:
 		void ForwardPropagation();
 		double CalculateCost();
@@ -40,6 +41,6 @@ namespace NNCore {
 		std::map<int, double> m_EpochCostMap;
 
 		std::mutex nnMutex;
-
+		std::pair<int, int> m_ProcessingNeuronColRow{ -1,-1 };
 	};
 }

@@ -72,42 +72,44 @@ namespace NNCore {
 
 	void NeuralNetwork::ForwardPropagation()
 	{
-		auto lastTime = std::chrono::high_resolution_clock::now();
-
+		std::lock_guard<std::mutex> lock(nnMutex);
 		for(size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
 		{
+			float layerTime = 2.0f;
+			float nodeTime = layerTime / m_Layers[layerIndex + 1]->GetNeurons().size();
+
+			//TODO: Use weights->transpose then get col rows
+			size_t numCols = m_Weights[layerIndex]->GetNumCols();
+			size_t numRows = m_Weights[layerIndex]->GetNumRows();
+			const std::vector<std::vector<double>>& matrix = m_Weights[layerIndex]->GetMatrixValues();
+			const std::vector<std::unique_ptr<Neuron>>& neuronValues = m_Layers[layerIndex]->GetNeurons();
+
 			auto lastTime = std::chrono::high_resolution_clock::now();
 
-			while(true) {
-				auto currentTime = std::chrono::high_resolution_clock::now();
-				std::chrono::duration<float> elapsed = currentTime - lastTime;
-
-				if(elapsed.count() >= 2.0f)  // 4-second delay
+			for(size_t column = 0; column < numCols; ++column)
+			{
+				while(true)
 				{
-					size_t numCols = m_Weights[layerIndex]->GetNumCols();
-					size_t numRows = m_Weights[layerIndex]->GetNumRows();
-					const std::vector<std::vector<double>>& matrix = m_Weights[layerIndex]->GetMatrixValues();
-					const std::vector<std::unique_ptr<Neuron>>& neuronValues = m_Layers[layerIndex]->GetNeurons();
-
-					for(size_t column = 0; column < numCols; ++column)
+					auto currentTime = std::chrono::high_resolution_clock::now();
+					std::chrono::duration<float> elapsed = currentTime - lastTime;
+					if(elapsed.count() >= nodeTime)
 					{
 						double addedValues = 0.0;
 						for(size_t row = 0; row < numRows; ++row)
 						{
 							addedValues += matrix[row][column] * neuronValues[row]->GetActivatedValue();
 						}
+						m_ProcessingNeuronColRow.first = layerIndex + 1;
+						m_ProcessingNeuronColRow.second = column;
 						m_Layers[layerIndex + 1]->SetNeuron(column, std::make_unique<Neuron>(addedValues, m_ActivationFunction));
+						lastTime = currentTime;
+						break;
 					}
-					lastTime = currentTime;
-
-					// Move to the next layer after processing
-					break;
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));  // Prevent busy-waiting
 			}
 		}
 	}
-
 
 	double NeuralNetwork::CalculateCost()
 	{
@@ -139,23 +141,32 @@ namespace NNCore {
 		//	double delta = (outputValue - targetValue) * NeuronActivation::Derivate(outputValue, m_ActivationFunction);
 		//	outputDeltas[neuronIndex] = delta;
 		//}
-		auto lastTime = std::chrono::high_resolution_clock::now();
 
 		for(size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
 		{
-			while(true) {
-				auto currentTime = std::chrono::high_resolution_clock::now();
-				std::chrono::duration<float> elapsed = currentTime - lastTime;
-				if(elapsed.count() >= 2.0f)
+			size_t numCols = m_Weights[layerIndex]->GetNumCols();
+			size_t numRows = m_Weights[layerIndex]->GetNumRows();
+			float layerTime = 4.0f; // Total time for the layer
+			float weightTime = layerTime / (numCols * numRows); // Time per weight
+			for(size_t column = 0; column < numCols; ++column)
+			{
+				auto lastTime = std::chrono::high_resolution_clock::now();
+				for(size_t row = 0; row < numRows; ++row)
 				{
-					size_t numCols = m_Weights[layerIndex]->GetNumCols();
-					size_t numRows = m_Weights[layerIndex]->GetNumRows();
-					Utils::Matrix* matrix = new Utils::Matrix(numRows, numCols, true); // Update matrix values here as necessary
-					m_Weights[layerIndex]->SetMatrix(*matrix);
-					lastTime = currentTime;
-					break;
+					while(true)
+					{
+						auto currentTime = std::chrono::high_resolution_clock::now();
+						std::chrono::duration<float> elapsed = currentTime - lastTime;
+						if(elapsed.count() >= weightTime)
+						{
+
+							m_Weights[layerIndex]->SetValue(row, column, Utils::Random::GetDoubleZeroToOne());
+							lastTime = std::chrono::high_resolution_clock::now();
+							lastTime = currentTime;
+							break;
+						}
+					}
 				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			}
 		}
 	}
