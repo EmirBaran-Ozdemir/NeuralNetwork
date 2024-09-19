@@ -784,12 +784,14 @@ namespace NNVisualizer {
 				std::unique_ptr<NNCore::NeuralNetwork> myNN;
 				try
 				{
-					myNN = std::make_unique<NNCore::NeuralNetwork>(
+					NNCore::NeuralNetworkProperties properties{
 						Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()),
 						Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()),
 						Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()),
 						Utils::ValueParser::ParseWStringToInt(m_MaxEpochTextField->GetText()),
-						m_ActivationFunction);
+						m_ActivationFunction
+					};
+					myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
 					this->SetNN(std::move(myNN));
 				}
 				catch(std::invalid_argument exception)

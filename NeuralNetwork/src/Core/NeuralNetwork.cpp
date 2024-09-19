@@ -4,21 +4,21 @@
 
 namespace NNCore {
 
-	NeuralNetwork::NeuralNetwork(const std::vector<int>& topology, const std::vector<double>& startingInputValues, const std::vector<double>& targetOutputValues, int maxEpoch, NeuronActivation::ActivationFunction activationFunction)
-		: m_Topology(topology), m_ActivationFunction(activationFunction), m_MaxEpoch(maxEpoch)
+	NeuralNetwork::NeuralNetwork(const NeuralNetworkProperties& properties)
+		: m_Properties(properties)
 	{
-		if(m_Topology.size() <= 0)
+		if(m_Properties.topology.size() <= 0)
 		{
 			throw std::invalid_argument("Should give valid size of topology");
 		}
 
-		if(startingInputValues.size() != m_Topology[0] || targetOutputValues.size() != m_Topology[m_Topology.size() - 1]) {
+		if(properties.startingInputValues.size() != m_Properties.topology[0] || properties.targetOutputValues.size() != m_Properties.topology[m_Properties.topology.size() - 1]) {
 			throw std::invalid_argument("Input or output size does not match the network topology.");
 		}
 
 		//! Initialize layers
-		for(const auto& layerSize : m_Topology) {
-			m_Layers.emplace_back(std::make_unique<Layer>(layerSize, m_ActivationFunction));
+		for(const auto& layerSize : m_Properties.topology) {
+			m_Layers.emplace_back(std::make_unique<Layer>(layerSize, m_Properties.activationFunction));
 		}
 
 		//! Initialize weights
@@ -26,13 +26,12 @@ namespace NNCore {
 			m_Weights.emplace_back(std::make_unique<Utils::Matrix>(m_Layers[i]->GetSize(), m_Layers[i + 1]->GetSize(), true));
 		}
 
-		m_TargetOutputValues = targetOutputValues;
-		m_Layers[0].get()->SetLayer(startingInputValues);
+		m_Layers[0].get()->SetLayer(properties.startingInputValues);
 	}
 
 	void NeuralNetwork::Train()
 	{
-		while(m_CurrentEpochIndex < m_MaxEpoch)
+		while(m_CurrentEpochIndex < m_Properties.maxEpoch)
 		{
 			{
 				std::lock_guard<std::mutex> lock(nnMutex);
@@ -101,7 +100,7 @@ namespace NNCore {
 						}
 						m_ProcessingNeuronColRow.first = layerIndex + 1;
 						m_ProcessingNeuronColRow.second = column;
-						m_Layers[layerIndex + 1]->SetNeuron(column, std::make_unique<Neuron>(addedValues, m_ActivationFunction));
+						m_Layers[layerIndex + 1]->SetNeuron(column, std::make_unique<Neuron>(addedValues, m_Properties.activationFunction));
 						lastTime = currentTime;
 						break;
 					}
@@ -114,7 +113,7 @@ namespace NNCore {
 	double NeuralNetwork::CalculateCost()
 	{
 		std::unique_ptr<Layer>& outputLayer = m_Layers.back();
-		if(outputLayer->GetSize() != m_TargetOutputValues.size())
+		if(outputLayer->GetSize() != m_Properties.targetOutputValues.size())
 		{
 			THROW_ERROR_ARGS("Output layer should have same size as target output layer");
 		}
@@ -122,7 +121,7 @@ namespace NNCore {
 		auto& neurons = outputLayer.get()->GetNeurons();
 		for(size_t neuronIndex = 0; neuronIndex < neurons.size(); neuronIndex++)
 		{
-			cost += pow(neurons[neuronIndex]->GetActivatedValue() - m_TargetOutputValues[neuronIndex], 2);
+			cost += pow(neurons[neuronIndex]->GetActivatedValue() - m_Properties.targetOutputValues[neuronIndex], 2);
 		}
 		return cost;
 	}

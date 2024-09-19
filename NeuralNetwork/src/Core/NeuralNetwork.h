@@ -6,11 +6,17 @@
 
 namespace NNCore {
 
-
+	struct NeuralNetworkProperties {
+		std::vector<int> topology;
+		std::vector<double> startingInputValues;
+		std::vector<double> targetOutputValues;
+		int maxEpoch;
+		NeuronActivation::ActivationFunction activationFunction;
+	};
 	class NN_API NeuralNetwork {
-
+		
 	public:
-		NeuralNetwork(const std::vector<int>& topology, const std::vector<double>& startingInputValues, const std::vector<double>& targetOutputValues, int maxEpoch, NeuronActivation::ActivationFunction activationFunction);
+		NeuralNetwork(const NeuralNetworkProperties& properties);
 		NeuralNetwork(const NeuralNetwork&) = delete;
 		NeuralNetwork& operator=(const NeuralNetwork&) = delete;
 		~NeuralNetwork() = default;
@@ -24,16 +30,18 @@ namespace NNCore {
 		const int GetCurrentEpochIndex() const { return m_CurrentEpochIndex; }
 		const Utils::LoopState GetLoopState() const { return m_LoopState; }
 		const std::pair<int, int> GetProcessingNeuronColRow() const { return m_ProcessingNeuronColRow; }
+		const NeuralNetworkProperties& GetProperties() const {return m_Properties;}
 	private:
 		void ForwardPropagation();
 		double CalculateCost();
 		void BackwardPropagation();
 	private:
-		std::vector<int> m_Topology;
+		NeuralNetworkProperties m_Properties;
 		std::vector<std::unique_ptr<Layer>> m_Layers;
-		std::vector<double> m_TargetOutputValues;
-		NeuronActivation::ActivationFunction m_ActivationFunction;
-		int m_MaxEpoch;
+		//std::vector<int> m_Topology;
+		//std::vector<double> m_TargetOutputValues;
+		//NeuronActivation::ActivationFunction m_ActivationFunction;
+		//int m_MaxEpoch;
 
 		Utils::LoopState m_LoopState{ Utils::LoopState::Stopped };
 		int m_CurrentEpochIndex{ 0 };
