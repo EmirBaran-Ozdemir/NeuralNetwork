@@ -40,7 +40,7 @@ namespace NNVisualizer {
 		SafeRelease(&m_BlackBrush);
 		SafeRelease(&m_WhiteBrush);
 		SafeRelease(&m_LimeGreenBrush);
-		if(m_TrainingThread.joinable())
+		if (m_TrainingThread.joinable())
 			m_TrainingThread.join();
 	}
 
@@ -50,7 +50,7 @@ namespace NNVisualizer {
 
 		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_Direct2dFactory);
 
-		if(SUCCEEDED(hr))
+		if (SUCCEEDED(hr))
 		{
 			hr = DWriteCreateFactory(
 				DWRITE_FACTORY_TYPE_SHARED,
@@ -59,7 +59,7 @@ namespace NNVisualizer {
 			);
 		}
 
-		if(SUCCEEDED(hr))
+		if (SUCCEEDED(hr))
 		{
 			WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
 			wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -88,7 +88,7 @@ namespace NNVisualizer {
 				this
 			);
 
-			if(m_hwnd)
+			if (m_hwnd)
 			{
 				// Adjust window size based on DPI.
 				float dpi = GetDpiForWindow(m_hwnd);
@@ -123,7 +123,7 @@ namespace NNVisualizer {
 		HRESULT hr = S_OK;
 
 		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_Direct2dFactory);
-		if(SUCCEEDED(hr))
+		if (SUCCEEDED(hr))
 		{
 			hr = DWriteCreateFactory(
 				DWRITE_FACTORY_TYPE_SHARED,
@@ -138,7 +138,7 @@ namespace NNVisualizer {
 	{
 		HRESULT hr = S_OK;
 
-		if(!m_RenderTarget)
+		if (!m_RenderTarget)
 		{
 			RECT rc;
 			GetClientRect(m_hwnd, &rc);
@@ -155,64 +155,64 @@ namespace NNVisualizer {
 				&m_RenderTarget
 			);
 
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF::LightGreen),
 					&m_LooseWeightBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create LooseWeightBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create LooseWeightBrush\n"); }
 			}
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF::Yellow),
 					&m_MediumWeightBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create MediumWeightBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create MediumWeightBrush\n"); }
 			}
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF::Red),
 					&m_TightWeightBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create TightWeightBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create TightWeightBrush\n"); }
 			}
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::LightGray, 0.6)),
 					&m_GrayBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
 			}
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF::Black),
 					&m_BlackBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
 			}
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::LimeGreen, 0.4)),
 					&m_LimeGreenBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
 			}
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_RenderTarget->CreateSolidColorBrush(
 					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::White)),
 					&m_WhiteBrush
 				);
-				if(FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
+				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
 			}
 
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				hr = m_DWriteFactory->CreateTextFormat(
 					L"Sans Serif",
@@ -256,7 +256,7 @@ namespace NNVisualizer {
 			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outpus");
 			m_MaxEpochTextField = std::make_shared<Components::TextField>(L"Max Epoch");
 
-			if(SUCCEEDED(hr))
+			if (SUCCEEDED(hr))
 			{
 				m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 				m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
@@ -274,9 +274,9 @@ namespace NNVisualizer {
 		m_NeuralNetwork = std::move(neuralNetwork);
 		const auto& layers = m_NeuralNetwork->GetLayers();
 
-		for(const auto& layer : layers)
+		for (const auto& layer : layers)
 		{
-			if(layer->GetSize() > m_LargestLayerSize)
+			if (layer->GetSize() > m_LargestLayerSize)
 			{
 				m_LargestLayerSize = layer->GetSize();
 			}
@@ -297,7 +297,7 @@ namespace NNVisualizer {
 	{
 		MSG msg;
 
-		while(GetMessage(&msg, NULL, 0, 0))
+		while (GetMessage(&msg, NULL, 0, 0))
 		{
 			auto res = TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -307,7 +307,7 @@ namespace NNVisualizer {
 	HRESULT Visualizer::OnRender()
 	{
 		HRESULT hr = CreateDeviceResources();
-		if(SUCCEEDED(hr))
+		if (SUCCEEDED(hr))
 		{
 			m_RenderTarget->BeginDraw();
 
@@ -315,7 +315,7 @@ namespace NNVisualizer {
 			m_RenderTarget->SetTransform(Matrix4x4ToMatrix3x2(viewMatrix));
 			m_RenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-			if(m_NeuralNetwork != nullptr)
+			if (m_NeuralNetwork != nullptr)
 			{
 				LoopNN();
 
@@ -326,9 +326,9 @@ namespace NNVisualizer {
 
 			m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-			if(!m_Initialized)
+			if (!m_Initialized)
 			{
-				if(!m_ExceptionMessage.empty())
+				if (!m_ExceptionMessage.empty())
 				{
 					m_RenderTarget->DrawText(
 						m_ExceptionMessage.c_str(),
@@ -363,15 +363,16 @@ namespace NNVisualizer {
 			}
 			else
 			{
-				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 10.0f, 10.0f, 100.0f, 50.0f);
-				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 110.0f, 10.0f, 100.0f, 50.0f);
-				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_TextFormat, 210.0f, 10.0f, 100.0f, 50.0f);
+				DrawProperties();
+				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 10.0f, 10.0f, 100.0f, 50.0f);
+				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 110.0f, 10.0f, 100.0f, 50.0f);
+				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 210.0f, 10.0f, 100.0f, 50.0f);
 			}
 
 			m_RenderTarget->SetTransform(previousTransform);
 
 			hr = m_RenderTarget->EndDraw();
-			if(hr == D2DERR_RECREATE_TARGET)
+			if (hr == D2DERR_RECREATE_TARGET)
 			{
 				hr = S_OK;
 				DiscardDeviceResources();
@@ -386,14 +387,14 @@ namespace NNVisualizer {
 		const auto& layers = m_NeuralNetwork->GetLayers();
 		const auto& weights = m_NeuralNetwork->GetWeights();
 
-		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
+		for (size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
 		{
 			const auto& layer = layers[layerIndex];
 			int layerSize = layer->GetSize();
 			float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
 			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
 
-			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
+			for (size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{
 				bool isChoosen = false;
 				bool isProcessing = false;
@@ -401,22 +402,22 @@ namespace NNVisualizer {
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
 
 				double neuronValue = layer->GetNeurons()[neuronIndex]->GetBaseValue();
-				if((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) isChoosen = true;
-				if(m_NeuralNetwork->GetProcessingNeuronColRow().first == layerIndex && m_NeuralNetwork->GetProcessingNeuronColRow().second == neuronIndex) isProcessing = true;
+				if ((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) isChoosen = true;
+				if (m_NeuralNetwork->GetProcessingNeuronColRow().first == layerIndex && m_NeuralNetwork->GetProcessingNeuronColRow().second == neuronIndex) isProcessing = true;
 				DrawNode(neuronPosition, m_NodeRadius, neuronValue, isChoosen, isProcessing);
 			}
 
-			if(layerIndex < layers.size() - 1)
+			if (layerIndex < layers.size() - 1)
 			{
 				const auto& nextLayer = layers[layerIndex + 1];
 				const auto& weightMatrix = weights[layerIndex];
 
-				for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
+				for (size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 				{
 					float yOffsetStart = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
 					D2D1_POINT_2F start = D2D1::Point2F(xOffset + m_NodeRadius, yOffsetStart);
 
-					for(size_t nextNeuronIndex = 0; nextNeuronIndex < nextLayer->GetSize(); ++nextNeuronIndex)
+					for (size_t nextNeuronIndex = 0; nextNeuronIndex < nextLayer->GetSize(); ++nextNeuronIndex)
 					{
 						bool isChoosen = false;
 
@@ -426,7 +427,7 @@ namespace NNVisualizer {
 						D2D1_POINT_2F end = D2D1::Point2F(xOffset + m_HorizontalSpacing - m_NodeRadius, yOffsetEnd);
 
 						double weight = weightMatrix->GetValue(neuronIndex, nextNeuronIndex);
-						if(((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) || ((m_ChoosenNeuronColRow.first == layerIndex + 1) && (m_ChoosenNeuronColRow.second == nextNeuronIndex)))
+						if (((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) || ((m_ChoosenNeuronColRow.first == layerIndex + 1) && (m_ChoosenNeuronColRow.second == nextNeuronIndex)))
 						{
 							isChoosen = true;
 						}
@@ -437,18 +438,47 @@ namespace NNVisualizer {
 		}
 	}
 
+	void Visualizer::DrawProperties()
+	{
+		
+		auto& properties = m_NeuralNetwork->GetDisplayProperties();
+		D2D1_RECT_F layoutRect = D2D1::RectF(
+			m_ViewportWidth - 200,
+			 10,
+			m_ViewportWidth - 100,
+			110
+		);
+		std::wstring activationFunctionString = m_WStringConverter.from_bytes(NNCore::NeuronActivation::GetActivationFunctionString(properties.activationFunction));
+		m_RenderTarget->DrawTextA(activationFunctionString.c_str(), static_cast<UINT32>(activationFunctionString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+		layoutRect.top += 100;
+		layoutRect.bottom += 100;
+
+		std::wstring epochStatusString = m_WStringConverter.from_bytes(std::to_string(properties.currentEpoch) + " / " + std::to_string(properties.maxEpoch));
+		m_RenderTarget->DrawTextA(epochStatusString.c_str(), static_cast<UINT32>(epochStatusString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+		layoutRect.top += 100;
+		layoutRect.bottom += 100;
+
+		std::wstring costString = m_WStringConverter.from_bytes(std::to_string(properties.cost));
+		m_RenderTarget->DrawTextA(costString.c_str(), static_cast<UINT32>(costString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+		layoutRect.top += 100;
+		layoutRect.bottom += 100;
+
+		std::wstring layerTimeString = m_WStringConverter.from_bytes(std::to_string(properties.layerTime));
+		m_RenderTarget->DrawTextA(layerTimeString.c_str(), static_cast<UINT32>(layerTimeString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+	}
+
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing)
 	{
 		ID2D1SolidColorBrush* brush = m_BlackBrush;
-		if(isChoosen)
+		if (isChoosen)
 		{
 			brush = m_BlackBrush;
 		}
-		else if(isProcessing)
+		else if (isProcessing)
 		{
 			brush = m_LimeGreenBrush;
 		}
-		else if((m_ChoosenNeuronColRow.first != -1) && (m_ChoosenNeuronColRow.second != -1))
+		else if ((m_ChoosenNeuronColRow.first != -1) && (m_ChoosenNeuronColRow.second != -1))
 		{
 			brush = m_GrayBrush;
 		}
@@ -481,13 +511,13 @@ namespace NNVisualizer {
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen)
 	{
 		ID2D1SolidColorBrush* brush;
-		if(((m_ChoosenNeuronColRow.first == -1) && (m_ChoosenNeuronColRow.second == -1)) || isConnectedToChoosen)
+		if (((m_ChoosenNeuronColRow.first == -1) && (m_ChoosenNeuronColRow.second == -1)) || isConnectedToChoosen)
 		{
-			if(weight < 0.33)
+			if (weight < 0.33)
 			{
 				brush = m_LooseWeightBrush;
 			}
-			else if(weight < 0.66)
+			else if (weight < 0.66)
 			{
 				brush = m_MediumWeightBrush;
 			}
@@ -506,7 +536,7 @@ namespace NNVisualizer {
 	LRESULT CALLBACK Visualizer::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		LRESULT result = 0;
-		if(message == WM_CREATE)
+		if (message == WM_CREATE)
 		{
 			LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
 			Visualizer* pVisualizer = (Visualizer*)pcs->lpCreateParams;
@@ -522,9 +552,9 @@ namespace NNVisualizer {
 			POINT worldCursorPos = screenCursorPos;
 			ScreenToClient(hwnd, &worldCursorPos);
 
-			if(pVisualizer)
+			if (pVisualizer)
 			{
-				switch(message)
+				switch (message)
 				{
 				case WM_SIZE:
 				{
@@ -538,7 +568,7 @@ namespace NNVisualizer {
 				case WM_MOUSEWHEEL:
 				{
 					int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-					if(delta > 0)
+					if (delta > 0)
 					{
 						pVisualizer->ZoomIn(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
 					}
@@ -607,7 +637,7 @@ namespace NNVisualizer {
 				}
 				}
 			}
-			if(!wasHandled)
+			if (!wasHandled)
 			{
 				result = DefWindowProc(hwnd, message, wParam, lParam);
 			}
@@ -617,13 +647,13 @@ namespace NNVisualizer {
 
 	void Visualizer::HandleKeyStroke(WPARAM wParam, LPARAM lParam)
 	{
-		if(HandleTextFieldKeyStroke(m_SelectedTextField, wParam, lParam)) return;
-		if(HandleCameraMovementKeyStroke(wParam, 10.0f)) return;
+		if (HandleTextFieldKeyStroke(m_SelectedTextField, wParam, lParam)) return;
+		if (HandleCameraMovementKeyStroke(wParam, 10.0f)) return;
 	}
 
 	bool Visualizer::HandleCameraMovementKeyStroke(WPARAM wParam, float distance)
 	{
-		switch(wParam)
+		switch (wParam)
 		{
 		case VK_LEFT:
 			m_Camera->MoveLeft(10.0f);
@@ -664,19 +694,19 @@ namespace NNVisualizer {
 	{
 
 		//! Handle button clicks
-		if(HandleButtonClick(worldCursorPos.x, worldCursorPos.y)) return;
+		if (HandleButtonClick(worldCursorPos.x, worldCursorPos.y)) return;
 
 		//! Handle text field selections
-		if(!m_Initialized)
+		if (!m_Initialized)
 		{
-			if(HandleTextFieldClick(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if(HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if(HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if(HandleTextFieldClick(m_MaxEpochTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if (HandleTextFieldClick(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if (HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if (HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if (HandleTextFieldClick(m_MaxEpochTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 		}
 
 		//! Handle node click
-		if(HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
+		if (HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
 
 		//! If not handled by any component than reset text field
 		m_SelectedTextField = nullptr;
@@ -684,27 +714,27 @@ namespace NNVisualizer {
 
 	bool Visualizer::HandleNodeClick(int mouseX, int mouseY)
 	{
-		if(!m_Initialized)
+		if (!m_Initialized)
 			return false;
 		const auto& layers = m_NeuralNetwork->GetLayers();
 		D2D1_POINT_2F worldCursorPos = m_Camera->GetCursorWorldPosition(D2D1::Point2F(mouseX, mouseY));
-		for(const auto& layer : layers)
+		for (const auto& layer : layers)
 		{
-			if(layer->GetSize() > m_LargestLayerSize)
+			if (layer->GetSize() > m_LargestLayerSize)
 			{
 				m_LargestLayerSize = layer->GetSize();
 			}
 		}
 
 		bool clickedOnAny = false;
-		for(size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
+		for (size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
 		{
 			const auto& layer = layers[layerIndex];
 			int layerSize = layer->GetSize();
 			float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
 			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
 
-			for(size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
+			for (size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
 			{
 				float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
 				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
@@ -712,7 +742,7 @@ namespace NNVisualizer {
 				// Check if the click is within the radius of the node
 				float distance = sqrt(pow(neuronPosition.x - worldCursorPos.x, 2) + pow(neuronPosition.y - worldCursorPos.y, 2));
 
-				if(distance <= m_NodeRadius)
+				if (distance <= m_NodeRadius)
 				{
 					clickedOnAny = true;
 					m_ChoosenNeuronColRow.first = layerIndex;
@@ -722,7 +752,7 @@ namespace NNVisualizer {
 				}
 			}
 		}
-		if(!clickedOnAny)
+		if (!clickedOnAny)
 		{
 			m_ChoosenNeuronColRow.first = -1;
 			m_ChoosenNeuronColRow.second = -1;
@@ -732,27 +762,27 @@ namespace NNVisualizer {
 
 	bool Visualizer::HandleButtonClick(float cursorX, float cursorY)
 	{
-		if(m_Initialized)
+		if (m_Initialized)
 		{
-			if(m_StartButton->IsClicked(cursorX, cursorY))
+			if (m_StartButton->IsClicked(cursorX, cursorY))
 			{
-				if(m_LoopState == Utils::LoopState::Stopped)
+				if (m_LoopState == Utils::LoopState::Stopped)
 				{
 					m_LoopState = Utils::LoopState::Running;
 					m_NeuralNetwork->ChangeLoopState(m_LoopState);
-					m_TrainingThread = std::thread([&] () {
+					m_TrainingThread = std::thread([&]() {
 						m_NeuralNetwork->ChangeLoopState(Utils::LoopState::Running);
 						m_NeuralNetwork->Train();
 						});
 				}
 				return true;
 			}
-			if(m_StepButton->IsClicked(cursorX, cursorY))
+			if (m_StepButton->IsClicked(cursorX, cursorY))
 			{
-				if(m_LoopState == Utils::LoopState::Stopped)
+				if (m_LoopState == Utils::LoopState::Stopped)
 				{
 					m_LoopState = Utils::LoopState::Stepping;
-					m_TrainingThread = std::thread([&] () {
+					m_TrainingThread = std::thread([&]() {
 						m_NeuralNetwork->ChangeLoopState(Utils::LoopState::Stepping);
 						m_NeuralNetwork->Step();
 						});
@@ -761,25 +791,25 @@ namespace NNVisualizer {
 				}
 				return true;
 			}
-			if(m_StopButton->IsClicked(cursorX, cursorY))
+			if (m_StopButton->IsClicked(cursorX, cursorY))
 			{
 				m_LoopState = Utils::LoopState::Stopped;
 				m_NeuralNetwork->ChangeLoopState(m_LoopState);
-				if(m_TrainingThread.joinable())
+				if (m_TrainingThread.joinable())
 					m_TrainingThread.join();
 				return true;
 			}
 		}
 		else
 		{
-			if(m_ActivationFunctionDropdown->IsClicked(cursorX, cursorY))
+			if (m_ActivationFunctionDropdown->IsClicked(cursorX, cursorY))
 			{
 				int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
 				NNCore::NeuronActivation::ActivationFunction activationFunction;
 				m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
 				return true;
 			}
-			if(m_InitializeButton->IsClicked(cursorX, cursorY))
+			if (m_InitializeButton->IsClicked(cursorX, cursorY))
 			{
 				std::unique_ptr<NNCore::NeuralNetwork> myNN;
 				try
@@ -794,10 +824,9 @@ namespace NNVisualizer {
 					myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
 					this->SetNN(std::move(myNN));
 				}
-				catch(std::invalid_argument exception)
+				catch (std::invalid_argument exception)
 				{
-					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-					m_ExceptionMessage = converter.from_bytes(exception.what());
+					m_ExceptionMessage = m_WStringConverter.from_bytes(exception.what());
 					return true;
 				}
 				m_Initialized = true;
@@ -821,7 +850,7 @@ namespace NNVisualizer {
 			&m_TextFormat
 		);
 
-		if(SUCCEEDED(hr))
+		if (SUCCEEDED(hr))
 		{
 			m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 			m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
@@ -829,7 +858,7 @@ namespace NNVisualizer {
 	}
 	void Visualizer::OnResize(UINT width, UINT height)
 	{
-		if(m_RenderTarget)
+		if (m_RenderTarget)
 		{
 			// Note: This method can fail, but it's okay to ignore the
 			// error here, because the error will be returned again

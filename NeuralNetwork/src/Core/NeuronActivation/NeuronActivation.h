@@ -30,6 +30,20 @@ namespace NNCore {
 
 			return activationFunctions;
 		}
+
+		static const std::string& GetActivationFunctionString(ActivationFunction activationFunction)
+		{
+			static const std::string sigmoid = "Sigmoid";
+			static const std::string fastSigmoid = "FastSigmoid";
+			static const std::string relu = "ReLU";
+
+			switch (activationFunction)
+			{
+			case Sigmoid: return sigmoid;
+			case FastSigmoid: return fastSigmoid;
+			case ReLU: return relu;
+			}
+		}
 	private:
 		static ActivationFunction s_ActivationFunction;
 

@@ -7,41 +7,45 @@ namespace NNCore {
 	NeuralNetwork::NeuralNetwork(const NeuralNetworkProperties& properties)
 		: m_Properties(properties)
 	{
-		if(m_Properties.topology.size() <= 0)
+		if (m_Properties.topology.size() <= 0)
 		{
 			throw std::invalid_argument("Should give valid size of topology");
 		}
 
-		if(properties.startingInputValues.size() != m_Properties.topology[0] || properties.targetOutputValues.size() != m_Properties.topology[m_Properties.topology.size() - 1]) {
+		if (properties.startingInputValues.size() != m_Properties.topology[0] || properties.targetOutputValues.size() != m_Properties.topology[m_Properties.topology.size() - 1]) {
 			throw std::invalid_argument("Input or output size does not match the network topology.");
 		}
 
 		//! Initialize layers
-		for(const auto& layerSize : m_Properties.topology) {
+		for (const auto& layerSize : m_Properties.topology) {
 			m_Layers.emplace_back(std::make_unique<Layer>(layerSize, m_Properties.activationFunction));
 		}
 
 		//! Initialize weights
-		for(size_t i = 0; i < m_Layers.size() - 1; ++i) {
+		for (size_t i = 0; i < m_Layers.size() - 1; ++i) {
 			m_Weights.emplace_back(std::make_unique<Utils::Matrix>(m_Layers[i]->GetSize(), m_Layers[i + 1]->GetSize(), true));
 		}
 
 		m_Layers[0].get()->SetLayer(properties.startingInputValues);
+		m_DisplayProperties.activationFunction = m_Properties.activationFunction;
+		m_DisplayProperties.maxEpoch = m_Properties.maxEpoch;
+		m_DisplayProperties.cost = 0.0;
+		m_DisplayProperties.currentEpoch = 0;
 	}
 
 	void NeuralNetwork::Train()
 	{
-		while(m_CurrentEpochIndex < m_Properties.maxEpoch)
+		while (m_CurrentEpochIndex < m_Properties.maxEpoch)
 		{
 			{
 				std::lock_guard<std::mutex> lock(nnMutex);
-				if(m_LoopState == Utils::LoopState::Stopped) {
+				if (m_LoopState == Utils::LoopState::Stopped) {
 					std::cout << "Training stopped" << std::endl;
 					break;
 				}
 
 				// If Paused, wait until resumed
-				while(m_LoopState == Utils::LoopState::Paused) {
+				while (m_LoopState == Utils::LoopState::Paused) {
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
@@ -51,6 +55,7 @@ namespace NNCore {
 
 			this->BackwardPropagation();
 			m_CurrentEpochIndex++;
+			m_DisplayProperties.currentEpoch = m_CurrentEpochIndex;
 		}
 	}
 
@@ -58,9 +63,11 @@ namespace NNCore {
 	{
 		this->ForwardPropagation();
 		std::cout << "Cost " << this->CalculateCost() << std::endl;
+		
 		this->BackwardPropagation();
 
 		m_CurrentEpochIndex++;
+		m_DisplayProperties.currentEpoch = m_CurrentEpochIndex;
 	}
 
 	void NeuralNetwork::ChangeLoopState(Utils::LoopState loopState)
@@ -72,10 +79,9 @@ namespace NNCore {
 	void NeuralNetwork::ForwardPropagation()
 	{
 		std::lock_guard<std::mutex> lock(nnMutex);
-		for(size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
+		for (size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
 		{
-			float layerTime = 2.0f;
-			float nodeTime = layerTime / m_Layers[layerIndex + 1]->GetNeurons().size();
+			float nodeTime = m_LayerTime / m_Layers[layerIndex + 1]->GetNeurons().size();
 
 			//TODO: Use weights->transpose then get col rows
 			size_t numCols = m_Weights[layerIndex]->GetNumCols();
@@ -85,16 +91,16 @@ namespace NNCore {
 
 			auto lastTime = std::chrono::high_resolution_clock::now();
 
-			for(size_t column = 0; column < numCols; ++column)
+			for (size_t column = 0; column < numCols; ++column)
 			{
-				while(true)
+				while (true)
 				{
 					auto currentTime = std::chrono::high_resolution_clock::now();
 					std::chrono::duration<float> elapsed = currentTime - lastTime;
-					if(elapsed.count() >= nodeTime)
+					if (elapsed.count() >= nodeTime)
 					{
 						double addedValues = 0.0;
-						for(size_t row = 0; row < numRows; ++row)
+						for (size_t row = 0; row < numRows; ++row)
 						{
 							addedValues += matrix[row][column] * neuronValues[row]->GetActivatedValue();
 						}
@@ -113,16 +119,17 @@ namespace NNCore {
 	double NeuralNetwork::CalculateCost()
 	{
 		std::unique_ptr<Layer>& outputLayer = m_Layers.back();
-		if(outputLayer->GetSize() != m_Properties.targetOutputValues.size())
+		if (outputLayer->GetSize() != m_Properties.targetOutputValues.size())
 		{
 			THROW_ERROR_ARGS("Output layer should have same size as target output layer");
 		}
 		double cost = 0;
 		auto& neurons = outputLayer.get()->GetNeurons();
-		for(size_t neuronIndex = 0; neuronIndex < neurons.size(); neuronIndex++)
+		for (size_t neuronIndex = 0; neuronIndex < neurons.size(); neuronIndex++)
 		{
 			cost += pow(neurons[neuronIndex]->GetActivatedValue() - m_Properties.targetOutputValues[neuronIndex], 2);
 		}
+		m_DisplayProperties.cost = cost;
 		return cost;
 	}
 
@@ -141,22 +148,22 @@ namespace NNCore {
 		//	outputDeltas[neuronIndex] = delta;
 		//}
 
-		for(size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
+		for (size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
 		{
 			size_t numCols = m_Weights[layerIndex]->GetNumCols();
 			size_t numRows = m_Weights[layerIndex]->GetNumRows();
-			float layerTime = 4.0f; // Total time for the layer
-			float weightTime = layerTime / (numCols * numRows); // Time per weight
-			for(size_t column = 0; column < numCols; ++column)
+
+			float weightTime = m_LayerTime  * 2 / (numCols * numRows); // Time per weight
+			for (size_t column = 0; column < numCols; ++column)
 			{
 				auto lastTime = std::chrono::high_resolution_clock::now();
-				for(size_t row = 0; row < numRows; ++row)
+				for (size_t row = 0; row < numRows; ++row)
 				{
-					while(true)
+					while (true)
 					{
 						auto currentTime = std::chrono::high_resolution_clock::now();
 						std::chrono::duration<float> elapsed = currentTime - lastTime;
-						if(elapsed.count() >= weightTime)
+						if (elapsed.count() >= weightTime)
 						{
 
 							m_Weights[layerIndex]->SetValue(row, column, Utils::Random::GetDoubleZeroToOne());

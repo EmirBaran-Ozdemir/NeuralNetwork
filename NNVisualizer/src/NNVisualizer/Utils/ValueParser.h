@@ -36,5 +36,13 @@ namespace Utils {
             return result;
         }
 
+        static std::wstring ConvertVectorToWString(const std::vector<double>& vec) {
+            std::wstringstream wss;
+            for (size_t i = 0; i < vec.size(); ++i) {
+                if (i != 0) wss << L", ";  // Add separator between values
+                wss << std::to_wstring(vec[i]);
+            }
+            return wss.str();
+        }
 	};
 }

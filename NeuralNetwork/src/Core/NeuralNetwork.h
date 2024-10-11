@@ -13,6 +13,13 @@ namespace NNCore {
 		int maxEpoch;
 		NeuronActivation::ActivationFunction activationFunction;
 	};
+	struct NeuralNetworkDisplayProperties {
+		double cost;
+		int currentEpoch;
+		int maxEpoch;
+		float layerTime;
+		NeuronActivation::ActivationFunction activationFunction;
+	};
 	class NN_API NeuralNetwork {
 		
 	public:
@@ -30,24 +37,20 @@ namespace NNCore {
 		const int GetCurrentEpochIndex() const { return m_CurrentEpochIndex; }
 		const Utils::LoopState GetLoopState() const { return m_LoopState; }
 		const std::pair<int, int> GetProcessingNeuronColRow() const { return m_ProcessingNeuronColRow; }
-		const NeuralNetworkProperties& GetProperties() const {return m_Properties;}
+		const NeuralNetworkDisplayProperties& GetDisplayProperties() const { return m_DisplayProperties; }
 	private:
 		void ForwardPropagation();
 		double CalculateCost();
 		void BackwardPropagation();
 	private:
 		NeuralNetworkProperties m_Properties;
+		NeuralNetworkDisplayProperties m_DisplayProperties;
 		std::vector<std::unique_ptr<Layer>> m_Layers;
-		//std::vector<int> m_Topology;
-		//std::vector<double> m_TargetOutputValues;
-		//NeuronActivation::ActivationFunction m_ActivationFunction;
-		//int m_MaxEpoch;
-
 		Utils::LoopState m_LoopState{ Utils::LoopState::Stopped };
 		int m_CurrentEpochIndex{ 0 };
 		std::vector<std::unique_ptr<Utils::Matrix>> m_Weights;
 		std::map<int, double> m_EpochCostMap;
-
+		float m_LayerTime = 2.0f;
 		std::mutex nnMutex;
 		std::pair<int, int> m_ProcessingNeuronColRow{ -1,-1 };
 	};

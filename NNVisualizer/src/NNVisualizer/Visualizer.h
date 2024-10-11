@@ -22,6 +22,7 @@ namespace NNVisualizer {
 		HRESULT OnRender();
 		static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 		void LoopNN();
+		void DrawProperties();
 		void DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing);
 		void DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen);
 		bool HandleCameraMovementKeyStroke(WPARAM wParam, float distance);
@@ -90,6 +91,7 @@ namespace NNVisualizer {
 		ID2D1SolidColorBrush* m_BlackBrush;
 		ID2D1SolidColorBrush* m_LimeGreenBrush;
 		ID2D1SolidColorBrush* m_WhiteBrush;
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> m_WStringConverter;
 
 		Renderer::Camera* m_Camera;
 
