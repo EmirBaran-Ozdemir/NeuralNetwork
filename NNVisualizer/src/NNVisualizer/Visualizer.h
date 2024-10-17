@@ -1,9 +1,9 @@
 #pragma once
 #include "nnvpch.h"
 #include "Core/NeuralNetwork.h"
+#include "Core/LoopState.h"
 #include "Renderer/Camera.h"
 #include "Components/Components.h"
-
 namespace NNVisualizer {
 
 	class Visualizer
@@ -23,6 +23,7 @@ namespace NNVisualizer {
 		static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 		void LoopNN();
 		void DrawProperties();
+		void DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect);
 		void DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing);
 		void DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen);
 		bool HandleCameraMovementKeyStroke(WPARAM wParam, float distance);
@@ -46,7 +47,7 @@ namespace NNVisualizer {
 
 		static bool HandleTextFieldClick(std::shared_ptr<Components::TextField>& textField, std::shared_ptr<Components::TextField>& selectedTextField, float cursorX, float cursorY)
 		{
-			if(textField->IsClicked(cursorX, cursorY))
+			if (textField->IsClicked(cursorX, cursorY))
 			{
 				selectedTextField = textField;
 				return true;
@@ -68,10 +69,24 @@ namespace NNVisualizer {
 
 			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat, x, y, width, height, isSelected);
 		}
+		static void DrawTextField(std::shared_ptr<Components::TextField>& textField,
+			std::shared_ptr<Components::TextField>& selectedTextField,
+			ID2D1HwndRenderTarget* renderTarget,
+			ID2D1SolidColorBrush* normalBrush,
+			ID2D1SolidColorBrush* selectedBrush,
+			ID2D1SolidColorBrush* normalTextBrush,
+			ID2D1SolidColorBrush* selectedTextBrush,
+			IDWriteTextFormat* textFormat,
+			D2D1_RECT_F* rectangle)
+		{
+			bool isSelected = textField.get() == selectedTextField.get();
+
+			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat, rectangle, isSelected);
+		}
 
 		static bool HandleTextFieldKeyStroke(std::shared_ptr<Components::TextField>& selectedTextField, WPARAM wParam, LPARAM lParam)
 		{
-			if(selectedTextField)
+			if (selectedTextField)
 				return selectedTextField->KeyStroke(wParam, lParam);
 			return false;
 		}
@@ -112,7 +127,7 @@ namespace NNVisualizer {
 		float m_NodeRadius = 10.0f;
 		int m_LargestLayerSize = 0;
 
-		Utils::LoopState m_LoopState = Utils::LoopState::Stopped;
+		NNCore::LoopState m_LoopState = NNCore::LoopState::Stopped;
 
 		//! Components
 		std::unique_ptr<Components::Button> m_StartButton;
@@ -127,6 +142,7 @@ namespace NNVisualizer {
 		std::shared_ptr<Components::TextField> m_TargetOutputsTextField;
 		std::shared_ptr<Components::TextField> m_SelectedTextField;
 		std::shared_ptr<Components::TextField> m_MaxEpochTextField;
+		std::shared_ptr<Components::TextField> m_LayerExecutionTimeTextField;
 
 		std::thread m_TrainingThread;
 	};

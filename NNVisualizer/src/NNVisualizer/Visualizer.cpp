@@ -273,6 +273,7 @@ namespace NNVisualizer {
 	{
 		m_NeuralNetwork = std::move(neuralNetwork);
 		const auto& layers = m_NeuralNetwork->GetLayers();
+		m_LayerExecutionTimeTextField = std::make_shared<Components::TextField>(std::to_wstring(m_NeuralNetwork->GetDisplayProperties().currentEpoch));
 
 		for (const auto& layer : layers)
 		{
@@ -317,7 +318,7 @@ namespace NNVisualizer {
 
 			if (m_NeuralNetwork != nullptr)
 			{
-				LoopNN();
+				this->LoopNN();
 
 			}
 
@@ -363,7 +364,7 @@ namespace NNVisualizer {
 			}
 			else
 			{
-				DrawProperties();
+				this->DrawProperties();
 				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 10.0f, 10.0f, 100.0f, 50.0f);
 				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 110.0f, 10.0f, 100.0f, 50.0f);
 				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 210.0f, 10.0f, 100.0f, 50.0f);
@@ -375,7 +376,7 @@ namespace NNVisualizer {
 			if (hr == D2DERR_RECREATE_TARGET)
 			{
 				hr = S_OK;
-				DiscardDeviceResources();
+				this->DiscardDeviceResources();
 			}
 		}
 
@@ -404,7 +405,7 @@ namespace NNVisualizer {
 				double neuronValue = layer->GetNeurons()[neuronIndex]->GetBaseValue();
 				if ((m_ChoosenNeuronColRow.first == layerIndex) && (m_ChoosenNeuronColRow.second == neuronIndex)) isChoosen = true;
 				if (m_NeuralNetwork->GetProcessingNeuronColRow().first == layerIndex && m_NeuralNetwork->GetProcessingNeuronColRow().second == neuronIndex) isProcessing = true;
-				DrawNode(neuronPosition, m_NodeRadius, neuronValue, isChoosen, isProcessing);
+				this->DrawNode(neuronPosition, m_NodeRadius, neuronValue, isChoosen, isProcessing);
 			}
 
 			if (layerIndex < layers.size() - 1)
@@ -431,7 +432,7 @@ namespace NNVisualizer {
 						{
 							isChoosen = true;
 						}
-						DrawWeight(start, end, static_cast<float>(weight), isChoosen);
+						this->DrawWeight(start, end, static_cast<float>(weight), isChoosen);
 					}
 				}
 			}
@@ -440,32 +441,51 @@ namespace NNVisualizer {
 
 	void Visualizer::DrawProperties()
 	{
-		
 		auto& properties = m_NeuralNetwork->GetDisplayProperties();
 		D2D1_RECT_F layoutRect = D2D1::RectF(
 			m_ViewportWidth - 200,
-			 10,
-			m_ViewportWidth - 100,
-			110
+			20,
+			m_ViewportWidth - 50,
+			70
 		);
-		std::wstring activationFunctionString = m_WStringConverter.from_bytes(NNCore::NeuronActivation::GetActivationFunctionString(properties.activationFunction));
-		m_RenderTarget->DrawTextA(activationFunctionString.c_str(), static_cast<UINT32>(activationFunctionString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
-		layoutRect.top += 100;
-		layoutRect.bottom += 100;
 
-		std::wstring epochStatusString = m_WStringConverter.from_bytes(std::to_string(properties.currentEpoch) + " / " + std::to_string(properties.maxEpoch));
-		m_RenderTarget->DrawTextA(epochStatusString.c_str(), static_cast<UINT32>(epochStatusString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
-		layoutRect.top += 100;
-		layoutRect.bottom += 100;
+		// Activation Function
+		std::wstring activationFunctionString = m_WStringConverter.from_bytes(
+			"ActivationFunction: " + NNCore::NeuronActivation::GetActivationFunctionString(properties.activationFunction)
+		);
+		this->DrawProperty(activationFunctionString, layoutRect);
 
-		std::wstring costString = m_WStringConverter.from_bytes(std::to_string(properties.cost));
-		m_RenderTarget->DrawTextA(costString.c_str(), static_cast<UINT32>(costString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
-		layoutRect.top += 100;
-		layoutRect.bottom += 100;
+		// Epoch Status
+		std::wstring epochStatusString = m_WStringConverter.from_bytes(
+			"Current/Total epoch: " + std::to_string(properties.currentEpoch) + " / " + std::to_string(properties.maxEpoch)
+		);
+		this->DrawProperty(epochStatusString, layoutRect);
 
-		std::wstring layerTimeString = m_WStringConverter.from_bytes(std::to_string(properties.layerTime));
-		m_RenderTarget->DrawTextA(layerTimeString.c_str(), static_cast<UINT32>(layerTimeString.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+		// Cost
+		std::wstring costString = m_WStringConverter.from_bytes("Cost: " + std::to_string(properties.cost));
+		this->DrawProperty(costString, layoutRect);
+
+		// Layer Time
+		if (m_NeuralNetwork->GetLoopState() == NNCore::LoopState::Stopped)
+		{
+			this->DrawTextField(m_LayerExecutionTimeTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &layoutRect);
+		}
 	}
+
+	void Visualizer::DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect)
+	{
+		m_RenderTarget->DrawTextA(text.c_str(), static_cast<UINT32>(text.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+		D2D1_RECT_F borderRect = D2D1::RectF(
+			layoutRect.left - 5,
+			layoutRect.top - 5,
+			layoutRect.right + 5,
+			layoutRect.bottom + 5
+		);
+		m_RenderTarget->DrawRectangle(borderRect, m_BlackBrush);
+		layoutRect.top += 60;
+		layoutRect.bottom += 60;
+	}
+
 
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing)
 	{
@@ -703,6 +723,7 @@ namespace NNVisualizer {
 			if (HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 			if (HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 			if (HandleTextFieldClick(m_MaxEpochTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			if (HandleTextFieldClick(m_LayerExecutionTimeTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 		}
 
 		//! Handle node click
@@ -766,12 +787,12 @@ namespace NNVisualizer {
 		{
 			if (m_StartButton->IsClicked(cursorX, cursorY))
 			{
-				if (m_LoopState == Utils::LoopState::Stopped)
+				if (m_LoopState == NNCore::LoopState::Stopped)
 				{
-					m_LoopState = Utils::LoopState::Running;
+					m_LoopState = NNCore::LoopState::Running;
 					m_NeuralNetwork->ChangeLoopState(m_LoopState);
 					m_TrainingThread = std::thread([&]() {
-						m_NeuralNetwork->ChangeLoopState(Utils::LoopState::Running);
+						m_NeuralNetwork->ChangeLoopState(NNCore::LoopState::Running);
 						m_NeuralNetwork->Train();
 						});
 				}
@@ -779,21 +800,21 @@ namespace NNVisualizer {
 			}
 			if (m_StepButton->IsClicked(cursorX, cursorY))
 			{
-				if (m_LoopState == Utils::LoopState::Stopped)
+				if (m_LoopState == NNCore::LoopState::Stopped)
 				{
-					m_LoopState = Utils::LoopState::Stepping;
+					m_LoopState = NNCore::LoopState::Stepping;
 					m_TrainingThread = std::thread([&]() {
-						m_NeuralNetwork->ChangeLoopState(Utils::LoopState::Stepping);
+						m_NeuralNetwork->ChangeLoopState(NNCore::LoopState::Stepping);
 						m_NeuralNetwork->Step();
 						});
-					m_LoopState = Utils::LoopState::Stopped;
+					m_LoopState = NNCore::LoopState::Stopped;
 					m_NeuralNetwork->ChangeLoopState(m_LoopState);
 				}
 				return true;
 			}
 			if (m_StopButton->IsClicked(cursorX, cursorY))
 			{
-				m_LoopState = Utils::LoopState::Stopped;
+				m_LoopState = NNCore::LoopState::Stopped;
 				m_NeuralNetwork->ChangeLoopState(m_LoopState);
 				if (m_TrainingThread.joinable())
 					m_TrainingThread.join();

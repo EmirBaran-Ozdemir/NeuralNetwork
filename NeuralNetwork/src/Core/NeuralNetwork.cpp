@@ -39,13 +39,13 @@ namespace NNCore {
 		{
 			{
 				std::lock_guard<std::mutex> lock(nnMutex);
-				if (m_LoopState == Utils::LoopState::Stopped) {
+				if (m_LoopState == NNCore::LoopState::Stopped) {
 					std::cout << "Training stopped" << std::endl;
 					break;
 				}
 
 				// If Paused, wait until resumed
-				while (m_LoopState == Utils::LoopState::Paused) {
+				while (m_LoopState == NNCore::LoopState::Paused) {
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
@@ -70,7 +70,7 @@ namespace NNCore {
 		m_DisplayProperties.currentEpoch = m_CurrentEpochIndex;
 	}
 
-	void NeuralNetwork::ChangeLoopState(Utils::LoopState loopState)
+	void NeuralNetwork::ChangeLoopState(NNCore::LoopState loopState)
 	{
 		std::lock_guard<std::mutex> lock(nnMutex);
 		m_LoopState = loopState;
@@ -81,7 +81,7 @@ namespace NNCore {
 		std::lock_guard<std::mutex> lock(nnMutex);
 		for (size_t layerIndex = 0; layerIndex < m_Layers.size() - 1; ++layerIndex)
 		{
-			float nodeTime = m_LayerTime / m_Layers[layerIndex + 1]->GetNeurons().size();
+			float nodeTime = m_LayerExecutionTime / m_Layers[layerIndex + 1]->GetNeurons().size();
 
 			//TODO: Use weights->transpose then get col rows
 			size_t numCols = m_Weights[layerIndex]->GetNumCols();
@@ -153,7 +153,7 @@ namespace NNCore {
 			size_t numCols = m_Weights[layerIndex]->GetNumCols();
 			size_t numRows = m_Weights[layerIndex]->GetNumRows();
 
-			float weightTime = m_LayerTime  * 2 / (numCols * numRows); // Time per weight
+			float weightTime = m_LayerExecutionTime  * 2 / (numCols * numRows); // Time per weight
 			for (size_t column = 0; column < numCols; ++column)
 			{
 				auto lastTime = std::chrono::high_resolution_clock::now();

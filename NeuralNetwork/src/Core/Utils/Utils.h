@@ -4,4 +4,3 @@
 #include "Matrix.h"
 #include "ExceptionHandler.h"
 #include "Time.h"
-#include "LoopState.h"

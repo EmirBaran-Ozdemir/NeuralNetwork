@@ -32,6 +32,7 @@ namespace Utils {
         }
         static int ParseWStringToInt(const std::wstring& wstr)
         {
+
             int result = std::stod(wstr);
             return result;
         }
