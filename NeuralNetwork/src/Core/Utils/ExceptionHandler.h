@@ -1,17 +1,48 @@
 #pragma once
+#include "Exceptions.h"
 #include <string>
 #include <stdexcept>
-#include <fmt/core.h>
 
 namespace Utils {
 
 	class ExceptionHandler {
 	public:
-		static void ThrowError(const char* className, const std::string& error);
-		static void ThrowError(const char* className, const char* format, fmt::format_args args);
-		static std::string ClassName(const std::string& prettyFunction);
 
+		static void ThrowException(const char* className, const std::string& target)
+		{
+			throw Exceptions::RuntimeException(fmt::format("{}: {}", className, target));
+		}
 
+		static void ThrowNullValueException(const std::string& target)
+		{
+			throw Exceptions::NullValueException(target);
+		}
+
+		static void ThrowParsingException(const std::string& target)
+		{
+			throw Exceptions::ParsingException(target);
+		}
+
+		static std::string ClassName(const std::string& functionSignature)
+		{
+			std::size_t endPos = functionSignature.find("(");
+
+			if (endPos != std::string::npos)
+			{
+				std::size_t startPos = functionSignature.rfind("::", endPos);
+				endPos = startPos;
+				if (startPos != std::string::npos)
+				{
+					startPos = functionSignature.rfind("::", startPos - 1);
+					if (startPos != std::string::npos)
+					{
+						std::string className = functionSignature.substr(startPos + 2, endPos - startPos - 2);
+						return className;
+					}
+				}
+			}
+			return functionSignature;
+		}
 	};
 }
 
@@ -33,6 +64,6 @@ namespace Utils {
 #define NN_FUNC_SIG "WARNING::UNKNOWN::NN_FUNC_SIG"
 #endif
 
-#define THROW_ERROR_ARGS(format, ...) Utils::ExceptionHandler::ThrowError(Utils::ExceptionHandler::ClassName(NN_FUNC_SIG).c_str(),format, fmt::make_format_args(__VA_ARGS__))
-#define THROW_ERROR(error) Utils::ExceptionHandler::ThrowError(Utils::ExceptionHandler::ClassName(NN_FUNC_SIG).c_str(), error)
-#define test() printf("test")
+#define THROW_ERROR(target) Utils::ExceptionHandler::ThrowException(Utils::ExceptionHandler::ClassName(NN_FUNC_SIG).c_str(), target)
+#define THROW_NULL_VALUE_ERROR(target) Utils::ExceptionHandler::ThrowNullValueException(target)
+#define THROW_PARSING_ERROR(target) Utils::ExceptionHandler::ThrowParsingException(target)

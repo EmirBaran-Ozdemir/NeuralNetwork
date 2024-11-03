@@ -253,7 +253,7 @@ namespace NNVisualizer {
 			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions());
 			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology");
 			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"Starting Inputs");
-			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outpus");
+			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outputs");
 			m_MaxEpochTextField = std::make_shared<Components::TextField>(L"Max Epoch");
 
 			if (SUCCEEDED(hr))
@@ -273,7 +273,7 @@ namespace NNVisualizer {
 	{
 		m_NeuralNetwork = std::move(neuralNetwork);
 		const auto& layers = m_NeuralNetwork->GetLayers();
-		m_LayerExecutionTimeTextField = std::make_shared<Components::TextField>(std::to_wstring(m_NeuralNetwork->GetDisplayProperties().currentEpoch));
+		m_LayerExecutionTimeTextField = std::make_shared<Components::TextField>(std::to_wstring(m_NeuralNetwork->GetDisplayProperties().layerExecutionTime));
 
 		for (const auto& layer : layers)
 		{
@@ -286,7 +286,7 @@ namespace NNVisualizer {
 		m_NodeRadius = 10.0f;
 		m_VerticalSpacing = std::max(25.0f, static_cast<float>(m_ViewportHeight / (m_LargestLayerSize + 1)));
 
-		//todo: Calculate max using verticalspacing
+		//todo: Calculate max using vertical spacing
 		m_HorizontalSpacing = std::max(120.0f, static_cast<float>(m_ViewportWidth / (layers.size() + 1)));
 		m_Camera->SetPosition(0, 200.0f);
 		UpdateWindow(m_hwnd);
@@ -319,7 +319,6 @@ namespace NNVisualizer {
 			if (m_NeuralNetwork != nullptr)
 			{
 				this->LoopNN();
-
 			}
 
 			D2D1_MATRIX_3X2_F previousTransform;
@@ -349,7 +348,7 @@ namespace NNVisualizer {
 				float componentXSpacing = 10.0f;
 				// has 4 buttons so move center 2 buttons left
 				float xCenter = static_cast<float>(m_ViewportWidth) / 2 - ((componentWidth * 2.5f) + (componentXSpacing * 2.0f));
-				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (200.0f);
+				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (componentWidth);
 				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + (componentWidth * 2.0f + componentXSpacing * 2.0f), yCenter - 80.0f, componentWidth, componentHeight);
 				float componentXOffset = 0.0f;
 				m_ActivationFunctionDropdown->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
@@ -450,25 +449,31 @@ namespace NNVisualizer {
 		);
 
 		// Activation Function
-		std::wstring activationFunctionString = m_WStringConverter.from_bytes(
+		std::wstring activationFunctionString = Utils::ValueParser::ConvertStringToWstring(
 			"ActivationFunction: " + NNCore::NeuronActivation::GetActivationFunctionString(properties.activationFunction)
 		);
 		this->DrawProperty(activationFunctionString, layoutRect);
 
 		// Epoch Status
-		std::wstring epochStatusString = m_WStringConverter.from_bytes(
+		std::wstring epochStatusString = Utils::ValueParser::ConvertStringToWstring(
 			"Current/Total epoch: " + std::to_string(properties.currentEpoch) + " / " + std::to_string(properties.maxEpoch)
 		);
 		this->DrawProperty(epochStatusString, layoutRect);
 
 		// Cost
-		std::wstring costString = m_WStringConverter.from_bytes("Cost: " + std::to_string(properties.cost));
+		std::wstring costString = Utils::ValueParser::ConvertStringToWstring("Cost: " + std::to_string(properties.cost));
 		this->DrawProperty(costString, layoutRect);
 
 		// Layer Time
 		if (m_NeuralNetwork->GetLoopState() == NNCore::LoopState::Stopped)
 		{
-			this->DrawTextField(m_LayerExecutionTimeTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &layoutRect);
+			D2D1_RECT_F borderRect = D2D1::RectF(
+				layoutRect.left - 5,
+				layoutRect.top - 5,
+				layoutRect.right + 5,
+				layoutRect.bottom + 5
+			);
+			this->DrawTextField(m_LayerExecutionTimeTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &borderRect);
 		}
 	}
 
@@ -485,7 +490,6 @@ namespace NNVisualizer {
 		layoutRect.top += 60;
 		layoutRect.bottom += 60;
 	}
-
 
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing)
 	{
@@ -709,10 +713,8 @@ namespace NNVisualizer {
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
 
-
 	void Visualizer::HandleMouseClick(const POINT& worldCursorPos)
 	{
-
 		//! Handle button clicks
 		if (HandleButtonClick(worldCursorPos.x, worldCursorPos.y)) return;
 
@@ -723,11 +725,13 @@ namespace NNVisualizer {
 			if (HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 			if (HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 			if (HandleTextFieldClick(m_MaxEpochTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if (HandleTextFieldClick(m_LayerExecutionTimeTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
 		}
-
-		//! Handle node click
-		if (HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
+		else
+		{
+			if (HandleTextFieldClick(m_LayerExecutionTimeTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
+			//! Handle node click
+			if (HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
+		}
 
 		//! If not handled by any component than reset text field
 		m_SelectedTextField = nullptr;
@@ -804,7 +808,7 @@ namespace NNVisualizer {
 				{
 					m_LoopState = NNCore::LoopState::Stepping;
 					m_TrainingThread = std::thread([&]() {
-						m_NeuralNetwork->ChangeLoopState(NNCore::LoopState::Stepping);
+						m_NeuralNetwork->ChangeLoopState(m_LoopState);
 						m_NeuralNetwork->Step();
 						});
 					m_LoopState = NNCore::LoopState::Stopped;
@@ -814,10 +818,13 @@ namespace NNVisualizer {
 			}
 			if (m_StopButton->IsClicked(cursorX, cursorY))
 			{
-				m_LoopState = NNCore::LoopState::Stopped;
-				m_NeuralNetwork->ChangeLoopState(m_LoopState);
-				if (m_TrainingThread.joinable())
-					m_TrainingThread.join();
+				if (m_LoopState != NNCore::LoopState::Stopped)
+				{
+					m_LoopState = NNCore::LoopState::Stopped;
+					m_NeuralNetwork->ChangeLoopState(m_LoopState);
+					if (m_TrainingThread.joinable())
+						m_TrainingThread.join();
+				}
 				return true;
 			}
 		}
@@ -826,7 +833,7 @@ namespace NNVisualizer {
 			if (m_ActivationFunctionDropdown->IsClicked(cursorX, cursorY))
 			{
 				int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
-				NNCore::NeuronActivation::ActivationFunction activationFunction;
+				NNCore::NeuronActivation::ActivationFunction activationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
 				m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
 				return true;
 			}
@@ -836,18 +843,28 @@ namespace NNVisualizer {
 				try
 				{
 					NNCore::NeuralNetworkProperties properties{
-						Utils::ValueParser::ParseWStringToIntVector(m_TopologyTextField->GetText()),
-						Utils::ValueParser::ParseWStringToDoubleVector(m_StartingInputsTextField->GetText()),
-						Utils::ValueParser::ParseWStringToDoubleVector(m_TargetOutputsTextField->GetText()),
-						Utils::ValueParser::ParseWStringToInt(m_MaxEpochTextField->GetText()),
+						Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetPlaceHolder()),
+						Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetPlaceHolder()),
+						Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetPlaceHolder()),
+						Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetPlaceHolder()),
 						m_ActivationFunction
 					};
 					myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
 					this->SetNN(std::move(myNN));
 				}
-				catch (std::invalid_argument exception)
+				catch (Utils::Exceptions::NullValueException& exception)
 				{
-					m_ExceptionMessage = m_WStringConverter.from_bytes(exception.what());
+					m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+					return true;
+				}
+				catch (Utils::Exceptions::ParsingException& exception)
+				{
+					m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+					return true;
+				}
+				catch (std::exception exception)
+				{
+					m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
 					return true;
 				}
 				m_Initialized = true;

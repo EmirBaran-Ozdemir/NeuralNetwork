@@ -106,7 +106,6 @@ namespace NNVisualizer {
 		ID2D1SolidColorBrush* m_BlackBrush;
 		ID2D1SolidColorBrush* m_LimeGreenBrush;
 		ID2D1SolidColorBrush* m_WhiteBrush;
-		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> m_WStringConverter;
 
 		Renderer::Camera* m_Camera;
 

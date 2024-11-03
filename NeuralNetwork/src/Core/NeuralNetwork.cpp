@@ -9,11 +9,11 @@ namespace NNCore {
 	{
 		if (m_Properties.topology.size() <= 0)
 		{
-			throw std::invalid_argument("Should give valid size of topology");
+			THROW_ERROR("Should give valid size of topology");
 		}
 
 		if (properties.startingInputValues.size() != m_Properties.topology[0] || properties.targetOutputValues.size() != m_Properties.topology[m_Properties.topology.size() - 1]) {
-			throw std::invalid_argument("Input or output size does not match the network topology.");
+			THROW_ERROR("Input or output size does not match the network topology.");
 		}
 
 		//! Initialize layers
@@ -72,7 +72,7 @@ namespace NNCore {
 
 	void NeuralNetwork::ChangeLoopState(NNCore::LoopState loopState)
 	{
-		std::lock_guard<std::mutex> lock(nnMutex);
+		//std::lock_guard<std::mutex> lock(nnMutex);
 		m_LoopState = loopState;
 	}
 
@@ -121,7 +121,7 @@ namespace NNCore {
 		std::unique_ptr<Layer>& outputLayer = m_Layers.back();
 		if (outputLayer->GetSize() != m_Properties.targetOutputValues.size())
 		{
-			THROW_ERROR_ARGS("Output layer should have same size as target output layer");
+			THROW_ERROR("Output layer should have same size as target output layer");
 		}
 		double cost = 0;
 		auto& neurons = outputLayer.get()->GetNeurons();

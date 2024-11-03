@@ -20,7 +20,7 @@ add_library(NeuralNetwork SHARED
     ${LAYER_SOURCE_FILES}
     ${UTILS_SOURCE_FILES}
     ${NEURONACTIVATION_SOURCE_FILES}
- )
+  "src/Core/Utils/Exceptions.h")
 
 # Set the export macro for DLL
 target_compile_definitions(NeuralNetwork PRIVATE BUILDING_NEURALNETWORK)
@@ -32,7 +32,7 @@ target_include_directories(NeuralNetwork PUBLIC
 )
 
 # Link external libraries
-target_link_libraries(NeuralNetwork PRIVATE fmt::fmt fmt-header-only)
+target_link_libraries(NeuralNetwork PUBLIC fmt::fmt fmt-header-only)
 
 # Set output properties for the shared library
 set_target_properties(NeuralNetwork PROPERTIES OUTPUT_NAME "NeuralNetwork")

@@ -1,49 +1,90 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <Core/Utils/ExceptionHandler.h>
 
 namespace Utils {
 	class ValueParser {
-    public:
-        static std::vector<int> ParseWStringToIntVector(const std::wstring& wstr, wchar_t delimiter = L',')
-        {
-            std::vector<int> result;
-            std::wistringstream wstream(wstr);
-            std::wstring item;
+	public:
+		static std::vector<int> ConvertWStringToIntVector(const std::wstring& wstr, const std::wstring& targetValue, wchar_t delimiter = L',')
+		{
+			if (wstr.empty())
+			{
+				THROW_NULL_VALUE_ERROR(ConvertWStringToString(targetValue));
+			}
+			std::vector<int> result;
+			try {
 
-            while(std::getline(wstream, item, delimiter)) {
-                result.push_back(std::stoi(item));  
-            }
+				std::wistringstream wStream(wstr);
+				std::wstring item;
 
-            return result;
-        }
+				while (std::getline(wStream, item, delimiter)) {
+					result.push_back(std::stoi(item));
+				}
+			}
+			catch (std::exception exception)
+			{
+				THROW_PARSING_ERROR(ConvertWStringToString(targetValue));
+			}
 
-        static std::vector<double> ParseWStringToDoubleVector(const std::wstring& wstr, wchar_t delimiter = L',')
-        {
-            std::vector<double> result;
-            std::wistringstream wstream(wstr);
-            std::wstring item;
+			return result;
+		}
 
-            while(std::getline(wstream, item, delimiter)) {
-                result.push_back(std::stod(item)); 
-            }
+		static std::vector<double> ConvertWStringToDoubleVector(const std::wstring& wstr, const std::wstring& targetValue, wchar_t delimiter = L',')
+		{
+			if (wstr.empty())
+			{
+				THROW_NULL_VALUE_ERROR(ConvertWStringToString(targetValue));
+			}
+			std::vector<double> result;
+			try {
 
-            return result;
-        }
-        static int ParseWStringToInt(const std::wstring& wstr)
-        {
+				std::wistringstream wStream(wstr);
+				std::wstring item;
 
-            int result = std::stod(wstr);
-            return result;
-        }
+				while (std::getline(wStream, item, delimiter)) {
+					result.push_back(std::stod(item));
+				}
+			}
+			catch (std::exception exception)
+			{
+				THROW_PARSING_ERROR(ConvertWStringToString(targetValue));
+			}
+			return result;
+		}
 
-        static std::wstring ConvertVectorToWString(const std::vector<double>& vec) {
-            std::wstringstream wss;
-            for (size_t i = 0; i < vec.size(); ++i) {
-                if (i != 0) wss << L", ";  // Add separator between values
-                wss << std::to_wstring(vec[i]);
-            }
-            return wss.str();
-        }
+		static int ConvertWStringToInt(const std::wstring& wstr, const std::wstring& targetValue)
+		{
+			if (wstr.empty())
+			{
+				THROW_NULL_VALUE_ERROR(ConvertWStringToString(targetValue));
+			}
+			int result;
+			try
+			{
+				result = std::stod(wstr);
+			}
+			catch (std::exception exception)
+			{
+				THROW_PARSING_ERROR(ConvertWStringToString(targetValue));
+			}
+			return result;
+		}
+
+		static std::wstring ConvertStringToWstring(const std::string& str)
+		{
+			using convert_typeX = std::codecvt_utf8<wchar_t>;
+			std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+			return converterX.from_bytes(str);
+		}
+
+		static std::string ConvertWStringToString(const std::wstring& wstr)
+		{
+			using convert_typeX = std::codecvt_utf8<wchar_t>;
+			std::wstring_convert<convert_typeX, wchar_t> converterX;
+
+			return converterX.to_bytes(wstr);
+		}
 	};
 }
