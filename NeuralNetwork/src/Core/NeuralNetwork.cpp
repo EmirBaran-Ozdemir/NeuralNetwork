@@ -38,15 +38,18 @@ namespace NNCore {
 		while (m_CurrentEpochIndex < m_Properties.maxEpoch)
 		{
 			{
-				std::lock_guard<std::mutex> lock(nnMutex);
-				if (m_LoopState == NNCore::LoopState::Stopped) {
+				std::unique_lock<std::mutex> lock(nnMutex);
+
+				if (m_LoopState == NNCore::LoopState::Stopped || m_LoopState == NNCore::LoopState::Stopping)
+				{
 					std::cout << "Training stopped" << std::endl;
+					m_LoopState = NNCore::LoopState::Stopped;
 					break;
 				}
 
-				// If Paused, wait until resumed
-				while (m_LoopState == NNCore::LoopState::Paused) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				while (m_LoopState == NNCore::LoopState::Paused)
+				{
+					m_ConditionVar.wait(lock);  // Wait until notified to continue
 				}
 			}
 
@@ -63,14 +66,14 @@ namespace NNCore {
 	{
 		this->ForwardPropagation();
 		std::cout << "Cost " << this->CalculateCost() << std::endl;
-		
+
 		this->BackwardPropagation();
 
 		m_CurrentEpochIndex++;
 		m_DisplayProperties.currentEpoch = m_CurrentEpochIndex;
 	}
 
-	void NeuralNetwork::ChangeLoopState(NNCore::LoopState loopState)
+	void NeuralNetwork::SetLoopState(NNCore::LoopState loopState)
 	{
 		//std::lock_guard<std::mutex> lock(nnMutex);
 		m_LoopState = loopState;
@@ -114,6 +117,8 @@ namespace NNCore {
 				}
 			}
 		}
+		m_ProcessingNeuronColRow.first = -1;
+		m_ProcessingNeuronColRow.second = -1;
 	}
 
 	double NeuralNetwork::CalculateCost()
@@ -153,7 +158,7 @@ namespace NNCore {
 			size_t numCols = m_Weights[layerIndex]->GetNumCols();
 			size_t numRows = m_Weights[layerIndex]->GetNumRows();
 
-			float weightTime = m_LayerExecutionTime  * 2 / (numCols * numRows); // Time per weight
+			float weightTime = m_LayerExecutionTime * 2 / (numCols * numRows); // Time per weight
 			for (size_t column = 0; column < numCols; ++column)
 			{
 				auto lastTime = std::chrono::high_resolution_clock::now();

@@ -319,6 +319,9 @@ namespace NNVisualizer {
 			if (m_NeuralNetwork != nullptr)
 			{
 				this->LoopNN();
+				if (m_TrainingFuture.valid() && m_TrainingFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+					m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopped);
+				}
 			}
 
 			D2D1_MATRIX_3X2_F previousTransform;
@@ -367,6 +370,8 @@ namespace NNVisualizer {
 				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 10.0f, 10.0f, 100.0f, 50.0f);
 				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 110.0f, 10.0f, 100.0f, 50.0f);
 				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 210.0f, 10.0f, 100.0f, 50.0f);
+
+
 			}
 
 			m_RenderTarget->SetTransform(previousTransform);
@@ -452,17 +457,17 @@ namespace NNVisualizer {
 		std::wstring activationFunctionString = Utils::ValueParser::ConvertStringToWstring(
 			"ActivationFunction: " + NNCore::NeuronActivation::GetActivationFunctionString(properties.activationFunction)
 		);
-		this->DrawProperty(activationFunctionString, layoutRect);
+		this->DrawProperty(activationFunctionString, layoutRect, true, true);
 
 		// Epoch Status
 		std::wstring epochStatusString = Utils::ValueParser::ConvertStringToWstring(
 			"Current/Total epoch: " + std::to_string(properties.currentEpoch) + " / " + std::to_string(properties.maxEpoch)
 		);
-		this->DrawProperty(epochStatusString, layoutRect);
+		this->DrawProperty(epochStatusString, layoutRect, true, true);
 
 		// Cost
 		std::wstring costString = Utils::ValueParser::ConvertStringToWstring("Cost: " + std::to_string(properties.cost));
-		this->DrawProperty(costString, layoutRect);
+		this->DrawProperty(costString, layoutRect, true, true);
 
 		// Layer Time
 		if (m_NeuralNetwork->GetLoopState() == NNCore::LoopState::Stopped)
@@ -475,9 +480,19 @@ namespace NNVisualizer {
 			);
 			this->DrawTextField(m_LayerExecutionTimeTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &borderRect);
 		}
+		else if (m_NeuralNetwork->GetLoopState() == NNCore::LoopState::Stopping)
+		{
+			D2D1_RECT_F borderRect = D2D1::RectF(
+				static_cast<float>(m_ViewportWidth) / 2 - 100,
+				20,
+				static_cast<float>(m_ViewportWidth) / 2 + 100,
+				70
+			);
+			this->DrawProperty(L"Stopping...", borderRect, false);
+		}
 	}
 
-	void Visualizer::DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect)
+	void Visualizer::DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect, bool slideRect, bool drawBorder)
 	{
 		m_RenderTarget->DrawTextA(text.c_str(), static_cast<UINT32>(text.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
 		D2D1_RECT_F borderRect = D2D1::RectF(
@@ -486,9 +501,13 @@ namespace NNVisualizer {
 			layoutRect.right + 5,
 			layoutRect.bottom + 5
 		);
-		m_RenderTarget->DrawRectangle(borderRect, m_BlackBrush);
-		layoutRect.top += 60;
-		layoutRect.bottom += 60;
+		if (drawBorder) m_RenderTarget->DrawRectangle(borderRect, m_BlackBrush);
+
+		if (slideRect)
+		{
+			layoutRect.top += 60;
+			layoutRect.bottom += 60;
+		}
 	}
 
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing)
@@ -791,12 +810,12 @@ namespace NNVisualizer {
 		{
 			if (m_StartButton->IsClicked(cursorX, cursorY))
 			{
-				if (m_LoopState == NNCore::LoopState::Stopped)
+				auto loopState = m_NeuralNetwork->GetLoopState();
+				if (loopState == NNCore::LoopState::Stopped)
 				{
-					m_LoopState = NNCore::LoopState::Running;
-					m_NeuralNetwork->ChangeLoopState(m_LoopState);
-					m_TrainingThread = std::thread([&]() {
-						m_NeuralNetwork->ChangeLoopState(NNCore::LoopState::Running);
+					m_NeuralNetwork->SetLoopState(NNCore::LoopState::Running);
+
+					m_TrainingFuture = std::async(std::launch::async, [&]() {
 						m_NeuralNetwork->Train();
 						});
 				}
@@ -804,26 +823,22 @@ namespace NNVisualizer {
 			}
 			if (m_StepButton->IsClicked(cursorX, cursorY))
 			{
-				if (m_LoopState == NNCore::LoopState::Stopped)
+				auto loopState = m_NeuralNetwork->GetLoopState();
+				if (loopState == NNCore::LoopState::Stopped)
 				{
-					m_LoopState = NNCore::LoopState::Stepping;
 					m_TrainingThread = std::thread([&]() {
-						m_NeuralNetwork->ChangeLoopState(m_LoopState);
+						m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopping);
 						m_NeuralNetwork->Step();
 						});
-					m_LoopState = NNCore::LoopState::Stopped;
-					m_NeuralNetwork->ChangeLoopState(m_LoopState);
 				}
 				return true;
 			}
 			if (m_StopButton->IsClicked(cursorX, cursorY))
 			{
-				if (m_LoopState != NNCore::LoopState::Stopped)
+				auto loopState = m_NeuralNetwork->GetLoopState();
+				if (loopState != NNCore::LoopState::Stopped)
 				{
-					m_LoopState = NNCore::LoopState::Stopped;
-					m_NeuralNetwork->ChangeLoopState(m_LoopState);
-					if (m_TrainingThread.joinable())
-						m_TrainingThread.join();
+					m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopping);
 				}
 				return true;
 			}

@@ -23,7 +23,7 @@ namespace NNVisualizer {
 		static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 		void LoopNN();
 		void DrawProperties();
-		void DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect);
+		void DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect, bool slideRect = false, bool drawBorder = false);
 		void DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing);
 		void DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen);
 		bool HandleCameraMovementKeyStroke(WPARAM wParam, float distance);
@@ -126,8 +126,6 @@ namespace NNVisualizer {
 		float m_NodeRadius = 10.0f;
 		int m_LargestLayerSize = 0;
 
-		NNCore::LoopState m_LoopState = NNCore::LoopState::Stopped;
-
 		//! Components
 		std::unique_ptr<Components::Button> m_StartButton;
 		std::unique_ptr<Components::Button> m_StepButton;
@@ -143,6 +141,8 @@ namespace NNVisualizer {
 		std::shared_ptr<Components::TextField> m_MaxEpochTextField;
 		std::shared_ptr<Components::TextField> m_LayerExecutionTimeTextField;
 
+		//! Multi-Threading
+		std::future<void> m_TrainingFuture;
 		std::thread m_TrainingThread;
 	};
 }

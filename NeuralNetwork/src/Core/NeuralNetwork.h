@@ -32,7 +32,7 @@ namespace NNCore {
 		void Train();
 		void Step();
 
-		void ChangeLoopState(NNCore::LoopState loopState);
+		void SetLoopState(NNCore::LoopState loopState);
 		const std::vector<std::unique_ptr<Layer>>& GetLayers() const { return m_Layers; }
 		const std::vector<std::unique_ptr<Utils::Matrix>>& GetWeights() const { return m_Weights; }
 		const int GetCurrentEpochIndex() const { return m_CurrentEpochIndex; }
@@ -54,5 +54,7 @@ namespace NNCore {
 		float m_LayerExecutionTime = 2.0f;
 		std::mutex nnMutex;
 		std::pair<int, int> m_ProcessingNeuronColRow{ -1,-1 };
+		std::condition_variable m_ConditionVar;
+
 	};
 }

@@ -23,5 +23,7 @@
 #include <map>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
+
 // Core
 #include "Core/Utils/Utils.h"

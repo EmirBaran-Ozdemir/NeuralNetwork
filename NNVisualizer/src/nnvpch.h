@@ -24,6 +24,6 @@
 #include <locale>
 #include <codecvt>
 #include <thread>
-
+#include <future>
 //! Utilities
 #include "NNVisualizer/Utils/Utils.h"
