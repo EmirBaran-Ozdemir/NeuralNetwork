@@ -25,5 +25,9 @@
 #include <codecvt>
 #include <thread>
 #include <future>
+
 //! Utilities
 #include "NNVisualizer/Utils/Utils.h"
+
+//! Libs
+#include <nlohmann/json.hpp> 

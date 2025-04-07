@@ -3,7 +3,9 @@
 #include "Core/NeuralNetwork.h"
 #include "Core/LoopState.h"
 #include "Renderer/Camera.h"
-#include "Components/Components.h"
+#include "Components/ComponentFactory.h"
+#include "Events/EventHandler.h"
+
 namespace NNVisualizer {
 
 	class Visualizer
@@ -14,6 +16,7 @@ namespace NNVisualizer {
 		HRESULT Initialize();
 		void SetNN(std::unique_ptr<NNCore::NeuralNetwork> neuralNetwork);
 		void RunMessageLoop();
+		std::shared_ptr<Components::Component> GetFocusedComponent() const { return m_FocusedComponent; }
 
 	private:
 		HRESULT CreateDeviceIndependentResources();
@@ -29,14 +32,13 @@ namespace NNVisualizer {
 		bool HandleCameraMovementKeyStroke(WPARAM wParam, float distance);
 		void ZoomIn(float cursorX, float cursorY);
 		void ZoomOut(float cursorX, float cursorY);
-		void HandleKeyStroke(WPARAM wParam, LPARAM lParam);
-		void HandleMouseClick(const POINT& worldCursorPos);
-		bool HandleNodeClick(int mouseX, int mouseY);
-		bool HandleButtonClick(float cursorX, float cursorY);
 		void OnResize(UINT width, UINT height);
+
+		void HandleMouseClick(const POINT& worldCursorPos);
+		void SetFocusedComponent(const std::shared_ptr<Components::Component>& component) { m_FocusedComponent = component; }
+
 		void UpdateTextFormat();
-
-
+		Events::EventHandler* GetEventHandler() { return &m_EventHandler; }
 		static D2D1_MATRIX_3X2_F Matrix4x4ToMatrix3x2(const D2D1_MATRIX_4X4_F& m4x4) {
 			return D2D1::Matrix3x2F(
 				m4x4._11, m4x4._12,
@@ -45,18 +47,7 @@ namespace NNVisualizer {
 			);
 		}
 
-		static bool HandleTextFieldClick(std::shared_ptr<Components::TextField>& textField, std::shared_ptr<Components::TextField>& selectedTextField, float cursorX, float cursorY)
-		{
-			if (textField->IsClicked(cursorX, cursorY))
-			{
-				selectedTextField = textField;
-				return true;
-			}
-			return false;
-		}
-
-		static void DrawTextField(std::shared_ptr<Components::TextField>& textField,
-			std::shared_ptr<Components::TextField>& selectedTextField,
+		void DrawTextField(std::shared_ptr<Components::TextField>& textField,
 			ID2D1HwndRenderTarget* renderTarget,
 			ID2D1SolidColorBrush* normalBrush,
 			ID2D1SolidColorBrush* selectedBrush,
@@ -65,12 +56,15 @@ namespace NNVisualizer {
 			IDWriteTextFormat* textFormat,
 			float x, float y, float width, float height)
 		{
-			bool isSelected = textField.get() == selectedTextField.get();
-
-			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat, x, y, width, height, isSelected);
+			bool isSelected = false;
+			if (auto focusedComp = std::dynamic_pointer_cast<Components::TextField>(m_FocusedComponent))
+			{
+				isSelected = textField == focusedComp;
+			}
+			textField->SetBounds(x, y, width, height);
+			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat);
 		}
-		static void DrawTextField(std::shared_ptr<Components::TextField>& textField,
-			std::shared_ptr<Components::TextField>& selectedTextField,
+		void DrawTextField(std::shared_ptr<Components::TextField>& textField,
 			ID2D1HwndRenderTarget* renderTarget,
 			ID2D1SolidColorBrush* normalBrush,
 			ID2D1SolidColorBrush* selectedBrush,
@@ -79,16 +73,13 @@ namespace NNVisualizer {
 			IDWriteTextFormat* textFormat,
 			D2D1_RECT_F* rectangle)
 		{
-			bool isSelected = textField.get() == selectedTextField.get();
-
-			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat, rectangle, isSelected);
-		}
-
-		static bool HandleTextFieldKeyStroke(std::shared_ptr<Components::TextField>& selectedTextField, WPARAM wParam, LPARAM lParam)
-		{
-			if (selectedTextField)
-				return selectedTextField->KeyStroke(wParam, lParam);
-			return false;
+			bool isSelected = false;
+			if (auto focusedComp = std::dynamic_pointer_cast<Components::TextField>(m_FocusedComponent))
+			{
+				isSelected = textField == focusedComp;
+			}
+			textField->SetBounds(*rectangle);
+			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat);
 		}
 
 	private:
@@ -96,9 +87,13 @@ namespace NNVisualizer {
 		ID2D1Factory* m_Direct2dFactory;
 		IDWriteFactory* m_DWriteFactory;
 		ID2D1HwndRenderTarget* m_RenderTarget;
+
+		//! Text Formats
 		IDWriteTextFormat* m_TextFormat;
 		IDWriteTextFormat* m_MenuTextFormat;
 		IDWriteTextFormat* m_ErrorTextFormat;
+
+		//! Brushes
 		ID2D1SolidColorBrush* m_LooseWeightBrush;
 		ID2D1SolidColorBrush* m_MediumWeightBrush;
 		ID2D1SolidColorBrush* m_TightWeightBrush;
@@ -110,13 +105,8 @@ namespace NNVisualizer {
 		Renderer::Camera* m_Camera;
 
 		//! Runtime data
-		bool m_Initialized = false;
-		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
-		std::pair<int, int> m_ChoosenNeuronColRow{ -1,-1 };
-
-		//! NN Properties
+		bool m_NNInitialized = false;
 		std::wstring m_ExceptionMessage = L"";
-		NNCore::NeuronActivation::ActivationFunction m_ActivationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
 
 		int m_ViewportHeight;
 		int m_ViewportWidth;
@@ -126,23 +116,32 @@ namespace NNVisualizer {
 		float m_NodeRadius = 10.0f;
 		int m_LargestLayerSize = 0;
 
-		//! Components
-		std::unique_ptr<Components::Button> m_StartButton;
-		std::unique_ptr<Components::Button> m_StepButton;
-		std::unique_ptr<Components::Button> m_StopButton;
-		std::unique_ptr<Components::Button> m_InitializeButton;
+		//! NN Properties
+		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
+		std::pair<int, int> m_ChoosenNeuronColRow{ -1,-1 };
 
-		std::unique_ptr<Components::Dropdown> m_ActivationFunctionDropdown;
+		//! Components
+		std::map<std::shared_ptr<Components::Component>, bool> m_ComponentMap;
+		std::shared_ptr<Components::Component> m_FocusedComponent;
+		Events::EventHandler m_EventHandler;
+
+		std::shared_ptr<Components::Button> m_StartButton;
+		std::shared_ptr<Components::Button> m_StepButton;
+		std::shared_ptr<Components::Button> m_StopButton;
+		std::shared_ptr<Components::Button> m_InitializeButton;
+
+		std::shared_ptr<Components::Dropdown> m_ActivationFunctionDropdown;
 
 		std::shared_ptr<Components::TextField> m_TopologyTextField;
 		std::shared_ptr<Components::TextField> m_StartingInputsTextField;
 		std::shared_ptr<Components::TextField> m_TargetOutputsTextField;
-		std::shared_ptr<Components::TextField> m_SelectedTextField;
 		std::shared_ptr<Components::TextField> m_MaxEpochTextField;
 		std::shared_ptr<Components::TextField> m_LayerExecutionTimeTextField;
 
 		//! Multi-Threading
 		std::future<void> m_TrainingFuture;
 		std::thread m_TrainingThread;
+
+
 	};
 }

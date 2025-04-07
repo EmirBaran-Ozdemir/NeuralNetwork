@@ -246,7 +246,8 @@ namespace NNVisualizer {
 				);
 			}
 
-			m_InitializeButton = std::make_unique<Components::Button>(L"Initialize");
+			m_InitializeButton = Components::ComponentFactory::CreateButton(L"Initialize");
+			m_ComponentMap.emplace(m_InitializeButton, true);
 			m_StartButton = std::make_unique<Components::Button>(L"Start");
 			m_StepButton = std::make_unique<Components::Button>(L"Step");
 			m_StopButton = std::make_unique<Components::Button>(L"Stop");
@@ -329,7 +330,7 @@ namespace NNVisualizer {
 
 			m_RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-			if (!m_Initialized)
+			if (!m_NNInitialized)
 			{
 				if (!m_ExceptionMessage.empty())
 				{
@@ -352,24 +353,29 @@ namespace NNVisualizer {
 				// has 4 buttons so move center 2 buttons left
 				float xCenter = static_cast<float>(m_ViewportWidth) / 2 - ((componentWidth * 2.5f) + (componentXSpacing * 2.0f));
 				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (componentWidth);
-				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + (componentWidth * 2.0f + componentXSpacing * 2.0f), yCenter - 80.0f, componentWidth, componentHeight);
+				m_InitializeButton->SetBounds(xCenter + (componentWidth * 2.0f + componentXSpacing * 2.0f), yCenter - 80.0f, componentWidth, componentHeight);
+				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
 				float componentXOffset = 0.0f;
-				m_ActivationFunctionDropdown->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				m_ActivationFunctionDropdown->SetBounds(xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				m_ActivationFunctionDropdown->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_TopologyTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_TopologyTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_StartingInputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_StartingInputsTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_TargetOutputsTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_TargetOutputsTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_MaxEpochTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_MaxEpochTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 			}
 			else
 			{
 				this->DrawProperties();
-				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 10.0f, 10.0f, 100.0f, 50.0f);
-				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 110.0f, 10.0f, 100.0f, 50.0f);
-				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_MenuTextFormat, 210.0f, 10.0f, 100.0f, 50.0f);
+				m_StartButton->SetBounds(10.0f, 10.0f, 100.0f, 50.0f);
+				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
+				m_StepButton->SetBounds(110.0f, 10.0f, 100.0f, 50.0f);
+				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
+				m_StopButton->SetBounds(210.0f, 10.0f, 100.0f, 50.0f);
+				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
 
 
 			}
@@ -478,7 +484,7 @@ namespace NNVisualizer {
 				layoutRect.right + 5,
 				layoutRect.bottom + 5
 			);
-			this->DrawTextField(m_LayerExecutionTimeTextField, m_SelectedTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &borderRect);
+			this->DrawTextField(m_LayerExecutionTimeTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &borderRect);
 		}
 		else if (m_NeuralNetwork->GetLoopState() == NNCore::LoopState::Stopping)
 		{
@@ -594,7 +600,6 @@ namespace NNVisualizer {
 			GetCursorPos(&screenCursorPos);
 			POINT worldCursorPos = screenCursorPos;
 			ScreenToClient(hwnd, &worldCursorPos);
-
 			if (pVisualizer)
 			{
 				switch (message)
@@ -627,17 +632,21 @@ namespace NNVisualizer {
 				}
 				case WM_KEYDOWN:
 				{
-					pVisualizer->HandleKeyStroke(wParam, lParam);
+					wasHandled = pVisualizer->GetEventHandler()->HandleKeyStroke(pVisualizer->GetFocusedComponent(), message, wParam, lParam);
 					result = 0;
-					wasHandled = true;
+					if (!wasHandled)
+						pVisualizer->HandleCameraMovementKeyStroke(wParam, 10.0f);
 					break;
 				}
 				case WM_LBUTTONDOWN:
 				{
 
 					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
-
-					pVisualizer->HandleMouseClick(worldCursorPos);
+					if (pVisualizer->GetFocusedComponent() == nullptr)
+					{
+						pVisualizer->HandleMouseClick(worldCursorPos);
+					}
+					pVisualizer->GetEventHandler()->HandleMouseClick(pVisualizer->GetFocusedComponent(), worldCursorPos);
 
 					result = 0;
 					wasHandled = true;
@@ -688,12 +697,6 @@ namespace NNVisualizer {
 		return result;
 	}
 
-	void Visualizer::HandleKeyStroke(WPARAM wParam, LPARAM lParam)
-	{
-		if (HandleTextFieldKeyStroke(m_SelectedTextField, wParam, lParam)) return;
-		if (HandleCameraMovementKeyStroke(wParam, 10.0f)) return;
-	}
-
 	bool Visualizer::HandleCameraMovementKeyStroke(WPARAM wParam, float distance)
 	{
 		switch (wParam)
@@ -734,159 +737,147 @@ namespace NNVisualizer {
 
 	void Visualizer::HandleMouseClick(const POINT& worldCursorPos)
 	{
-		//! Handle button clicks
-		if (HandleButtonClick(worldCursorPos.x, worldCursorPos.y)) return;
-
-		//! Handle text field selections
-		if (!m_Initialized)
+		for (auto const& [component, visible] : m_ComponentMap)
 		{
-			if (HandleTextFieldClick(m_TopologyTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if (HandleTextFieldClick(m_StartingInputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if (HandleTextFieldClick(m_TargetOutputsTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			if (HandleTextFieldClick(m_MaxEpochTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-		}
-		else
-		{
-			if (HandleTextFieldClick(m_LayerExecutionTimeTextField, m_SelectedTextField, worldCursorPos.x, worldCursorPos.y)) return;
-			//! Handle node click
-			if (HandleNodeClick(worldCursorPos.x, worldCursorPos.y)) return;
-		}
-
-		//! If not handled by any component than reset text field
-		m_SelectedTextField = nullptr;
-	}
-
-	bool Visualizer::HandleNodeClick(int mouseX, int mouseY)
-	{
-		if (!m_Initialized)
-			return false;
-		const auto& layers = m_NeuralNetwork->GetLayers();
-		D2D1_POINT_2F worldCursorPos = m_Camera->GetCursorWorldPosition(D2D1::Point2F(mouseX, mouseY));
-		for (const auto& layer : layers)
-		{
-			if (layer->GetSize() > m_LargestLayerSize)
+			if (visible && component->IsClickInBounds(worldCursorPos.x, worldCursorPos.y))
 			{
-				m_LargestLayerSize = layer->GetSize();
+				SetFocusedComponent(component);
+				break;
 			}
-		}
-
-		bool clickedOnAny = false;
-		for (size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
-		{
-			const auto& layer = layers[layerIndex];
-			int layerSize = layer->GetSize();
-			float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
-			float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
-
-			for (size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
-			{
-				float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
-				D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
-
-				// Check if the click is within the radius of the node
-				float distance = sqrt(pow(neuronPosition.x - worldCursorPos.x, 2) + pow(neuronPosition.y - worldCursorPos.y, 2));
-
-				if (distance <= m_NodeRadius)
-				{
-					clickedOnAny = true;
-					m_ChoosenNeuronColRow.first = layerIndex;
-					m_ChoosenNeuronColRow.second = neuronIndex;
-					InvalidateRect(m_hwnd, NULL, FALSE);
-					return true;
-				}
-			}
-		}
-		if (!clickedOnAny)
-		{
-			m_ChoosenNeuronColRow.first = -1;
-			m_ChoosenNeuronColRow.second = -1;
-			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	}
 
-	bool Visualizer::HandleButtonClick(float cursorX, float cursorY)
-	{
-		if (m_Initialized)
-		{
-			if (m_StartButton->IsClicked(cursorX, cursorY))
-			{
-				auto loopState = m_NeuralNetwork->GetLoopState();
-				if (loopState == NNCore::LoopState::Stopped)
-				{
-					m_NeuralNetwork->SetLoopState(NNCore::LoopState::Running);
+	//bool Visualizer::HandleNodeClick(int mouseX, int mouseY)
+	//{
+	//	if (!m_NNInitialized)
+	//		return false;
+	//	const auto& layers = m_NeuralNetwork->GetLayers();
+	//	D2D1_POINT_2F worldCursorPos = m_Camera->GetCursorWorldPosition(D2D1::Point2F(mouseX, mouseY));
+	//	for (const auto& layer : layers)
+	//	{
+	//		if (layer->GetSize() > m_LargestLayerSize)
+	//		{
+	//			m_LargestLayerSize = layer->GetSize();
+	//		}
+	//	}
 
-					m_TrainingFuture = std::async(std::launch::async, [&]() {
-						m_NeuralNetwork->Train();
-						});
-				}
-				return true;
-			}
-			if (m_StepButton->IsClicked(cursorX, cursorY))
-			{
-				auto loopState = m_NeuralNetwork->GetLoopState();
-				if (loopState == NNCore::LoopState::Stopped)
-				{
-					m_TrainingThread = std::thread([&]() {
-						m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopping);
-						m_NeuralNetwork->Step();
-						});
-				}
-				return true;
-			}
-			if (m_StopButton->IsClicked(cursorX, cursorY))
-			{
-				auto loopState = m_NeuralNetwork->GetLoopState();
-				if (loopState != NNCore::LoopState::Stopped)
-				{
-					m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopping);
-				}
-				return true;
-			}
-		}
-		else
-		{
-			if (m_ActivationFunctionDropdown->IsClicked(cursorX, cursorY))
-			{
-				int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
-				NNCore::NeuronActivation::ActivationFunction activationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
-				m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
-				return true;
-			}
-			if (m_InitializeButton->IsClicked(cursorX, cursorY))
-			{
-				std::unique_ptr<NNCore::NeuralNetwork> myNN;
-				try
-				{
-					NNCore::NeuralNetworkProperties properties{
-						Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetPlaceHolder()),
-						Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetPlaceHolder()),
-						Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetPlaceHolder()),
-						Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetPlaceHolder()),
-						m_ActivationFunction
-					};
-					myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
-					this->SetNN(std::move(myNN));
-				}
-				catch (Utils::Exceptions::NullValueException& exception)
-				{
-					m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
-					return true;
-				}
-				catch (Utils::Exceptions::ParsingException& exception)
-				{
-					m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
-					return true;
-				}
-				catch (std::exception exception)
-				{
-					m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
-					return true;
-				}
-				m_Initialized = true;
-			}
-		}
-		return false;
-	}
+	//	bool clickedOnAny = false;
+	//	for (size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex)
+	//	{
+	//		const auto& layer = layers[layerIndex];
+	//		int layerSize = layer->GetSize();
+	//		float xOffset = 20.0f + layerIndex * m_HorizontalSpacing;
+	//		float yStartingGap = ((float(m_LargestLayerSize - layerSize) / 2) * (m_VerticalSpacing));
+
+	//		for (size_t neuronIndex = 0; neuronIndex < layerSize; ++neuronIndex)
+	//		{
+	//			float yOffset = yStartingGap + 20.0f + neuronIndex * m_VerticalSpacing;
+	//			D2D1_POINT_2F neuronPosition = D2D1::Point2F(xOffset, yOffset);
+
+	//			// Check if the click is within the radius of the node
+	//			float distance = sqrt(pow(neuronPosition.x - worldCursorPos.x, 2) + pow(neuronPosition.y - worldCursorPos.y, 2));
+
+	//			if (distance <= m_NodeRadius)
+	//			{
+	//				clickedOnAny = true;
+	//				m_ChoosenNeuronColRow.first = layerIndex;
+	//				m_ChoosenNeuronColRow.second = neuronIndex;
+	//				InvalidateRect(m_hwnd, NULL, FALSE);
+	//				return true;
+	//			}
+	//		}
+	//	}
+	//	if (!clickedOnAny)
+	//	{
+	//		m_ChoosenNeuronColRow.first = -1;
+	//		m_ChoosenNeuronColRow.second = -1;
+	//		InvalidateRect(m_hwnd, NULL, FALSE);
+	//	}
+	//}
+
+	//bool Visualizer::HandleButtonClick(float cursorX, float cursorY)
+	//{
+	//	if (m_NNInitialized)
+	//	{
+	//		if (m_StartButton->OnClick(cursorX, cursorY))
+	//		{
+	//			auto loopState = m_NeuralNetwork->GetLoopState();
+	//			if (loopState == NNCore::LoopState::Stopped)
+	//			{
+	//				m_NeuralNetwork->SetLoopState(NNCore::LoopState::Running);
+
+	//				m_TrainingFuture = std::async(std::launch::async, [&]() {
+	//					m_NeuralNetwork->Train();
+	//					});
+	//			}
+	//			return true;
+	//		}
+	//		if (m_StepButton->OnClick(cursorX, cursorY))
+	//		{
+	//			auto loopState = m_NeuralNetwork->GetLoopState();
+	//			if (loopState == NNCore::LoopState::Stopped)
+	//			{
+	//				m_TrainingThread = std::thread([&]() {
+	//					m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopping);
+	//					m_NeuralNetwork->Step();
+	//					});
+	//			}
+	//			return true;
+	//		}
+	//		if (m_StopButton->OnClick(cursorX, cursorY))
+	//		{
+	//			auto loopState = m_NeuralNetwork->GetLoopState();
+	//			if (loopState != NNCore::LoopState::Stopped)
+	//			{
+	//				m_NeuralNetwork->SetLoopState(NNCore::LoopState::Stopping);
+	//			}
+	//			return true;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		if (m_ActivationFunctionDropdown->OnClick(cursorX, cursorY))
+	//		{
+	//			int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
+	//			NNCore::NeuronActivation::ActivationFunction activationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
+	//			m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
+	//			return true;
+	//		}
+	//		if (m_InitializeButton->OnClick(cursorX, cursorY))
+	//		{
+	//			std::unique_ptr<NNCore::NeuralNetwork> myNN;
+	//			try
+	//			{
+	//				NNCore::NeuralNetworkProperties properties{
+	//					Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetPlaceHolder()),
+	//					Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetPlaceHolder()),
+	//					Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetPlaceHolder()),
+	//					Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetPlaceHolder()),
+	//					m_ActivationFunction
+	//				};
+	//				myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
+	//				this->SetNN(std::move(myNN));
+	//			}
+	//			catch (Utils::Exceptions::NullValueException& exception)
+	//			{
+	//				m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+	//				return true;
+	//			}
+	//			catch (Utils::Exceptions::ParsingException& exception)
+	//			{
+	//				m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+	//				return true;
+	//			}
+	//			catch (std::exception exception)
+	//			{
+	//				m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+	//				return true;
+	//			}
+	//			m_NNInitialized = true;
+	//		}
+	//	}
+	//	return false;
+	//}
 
 	void Visualizer::UpdateTextFormat()
 	{

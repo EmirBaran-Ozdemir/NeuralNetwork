@@ -22,7 +22,7 @@ namespace NNCore {
 		NeuronActivation::ActivationFunction activationFunction;
 	};
 	class NN_API NeuralNetwork {
-		
+
 	public:
 		NeuralNetwork(const NeuralNetworkProperties& properties);
 		NeuralNetwork(const NeuralNetwork&) = delete;
@@ -39,6 +39,7 @@ namespace NNCore {
 		const NNCore::LoopState GetLoopState() const { return m_LoopState; }
 		const std::pair<int, int> GetProcessingNeuronColRow() const { return m_ProcessingNeuronColRow; }
 		inline const NeuralNetworkDisplayProperties& GetDisplayProperties() const { return m_DisplayProperties; }
+		inline const NeuralNetworkProperties& GetProperties() const { return m_Properties; }
 	private:
 		void ForwardPropagation();
 		double CalculateCost();

@@ -1,0 +1,6 @@
+[submodule "NeuralNetwork/vendor/fmt"]
+	path = NeuralNetwork/vendor/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "NNVisualizer/vendor/json"]
+	path = NNVisualizer/vendor/json
+	url = https://github.com/nlohmann/json.git

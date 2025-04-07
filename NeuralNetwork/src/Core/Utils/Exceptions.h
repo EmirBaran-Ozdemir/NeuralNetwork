@@ -8,7 +8,7 @@ namespace Utils::Exceptions {
 
 	static void inline PrintError(const std::string& exception)
 	{
-		fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold, exception);
+		std::cout<<exception<<std::endl;
 	}
 
 	class NullValueException : public std::runtime_error {
@@ -28,11 +28,11 @@ namespace Utils::Exceptions {
 			Utils::Exceptions::PrintError(exception + " failed to parse.");
 		}
 	};
-	
+
 	class RuntimeException : public std::runtime_error {
 	public:
 		explicit RuntimeException(const std::string& exception)
-			: std::runtime_error("Runtime Error occurred " + exception) 
+			: std::runtime_error("Runtime Error occurred " + exception)
 		{
 			Utils::Exceptions::PrintError("Runtime Error occurred " + exception);
 		}

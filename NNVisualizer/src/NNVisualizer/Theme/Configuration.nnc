@@ -1,0 +1,18 @@
+NNConfiguration : 
+{
+	Colors: 
+	{
+		BGColor:LightBlue,
+		Node:
+		{
+			Active:Lime,
+			Deactive:Black,
+		}
+		Weights: 
+		{
+			Loose:Green,
+			Medium:Orange,
+			Teight:Red,
+		}
+	}
+}
