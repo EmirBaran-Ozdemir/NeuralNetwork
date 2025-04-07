@@ -246,8 +246,13 @@ namespace NNVisualizer {
 				);
 			}
 
-			m_InitializeButton = Components::ComponentFactory::CreateButton(L"Initialize");
-			m_ComponentMap.emplace(m_InitializeButton, true);
+			m_InitializeButton = Components::ComponentFactory::CreateButton(L"Initialize", []()
+				{
+					std::cout << "Now this button is clicked" << std::endl;
+					return true;
+				});
+			m_InitializeButton->SetVisibility(true);
+			m_ComponentList.push_back(m_InitializeButton);
 			m_StartButton = std::make_unique<Components::Button>(L"Start");
 			m_StepButton = std::make_unique<Components::Button>(L"Step");
 			m_StopButton = std::make_unique<Components::Button>(L"Stop");
@@ -737,9 +742,9 @@ namespace NNVisualizer {
 
 	void Visualizer::HandleMouseClick(const POINT& worldCursorPos)
 	{
-		for (auto const& [component, visible] : m_ComponentMap)
+		for (auto const& component : m_ComponentList)
 		{
-			if (visible && component->IsClickInBounds(worldCursorPos.x, worldCursorPos.y))
+			if (component->IsClickInBounds(worldCursorPos.x, worldCursorPos.y))
 			{
 				SetFocusedComponent(component);
 				break;

@@ -34,6 +34,11 @@ namespace Components {
 		return button;
 	}
 
+	std::unique_ptr<Button> ComponentFactory::CreateButton(const std::wstring& text, std::function<bool()> onClick) {
+		auto button = std::make_unique<Button>(text, onClick);
+		return button;
+	}
+
 	std::unique_ptr<TextField> ComponentFactory::CreateTextField(const std::wstring& text) {
 		auto textField = std::make_unique<TextField>(text);
 		return textField;

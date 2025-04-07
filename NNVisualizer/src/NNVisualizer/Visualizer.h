@@ -121,7 +121,7 @@ namespace NNVisualizer {
 		std::pair<int, int> m_ChoosenNeuronColRow{ -1,-1 };
 
 		//! Components
-		std::map<std::shared_ptr<Components::Component>, bool> m_ComponentMap;
+		std::vector<std::shared_ptr<Components::Component>> m_ComponentList;
 		std::shared_ptr<Components::Component> m_FocusedComponent;
 		Events::EventHandler m_EventHandler;
 
