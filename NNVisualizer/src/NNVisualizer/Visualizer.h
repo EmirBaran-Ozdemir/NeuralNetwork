@@ -82,6 +82,11 @@ namespace NNVisualizer {
 			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat);
 		}
 
+		//! Component Functions
+		void InitializeButtonFunc();
+
+		void ActivationFunctionFunc();
+
 	private:
 		HWND m_hwnd;
 		ID2D1Factory* m_Direct2dFactory;
@@ -119,7 +124,7 @@ namespace NNVisualizer {
 		//! NN Properties
 		std::unique_ptr<NNCore::NeuralNetwork> m_NeuralNetwork;
 		std::pair<int, int> m_ChoosenNeuronColRow{ -1,-1 };
-
+		NNCore::NeuronActivation::ActivationFunction m_ActivationFunction;
 		//! Components
 		std::vector<std::shared_ptr<Components::Component>> m_ComponentList;
 		std::shared_ptr<Components::Component> m_FocusedComponent;

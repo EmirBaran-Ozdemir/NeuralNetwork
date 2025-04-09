@@ -8,7 +8,7 @@ namespace Components {
 		renderTarget->DrawText(m_Text.c_str(), static_cast<UINT32>(m_Text.size()), textFormat, m_Rect, textBrush);
 	}
 
-	void Button::SetOnClick(std::function<bool()> onClick)
+	void Button::SetOnClick(std::function<void()> onClick)
 	{
 		m_OnClick = onClick;
 	}
@@ -18,7 +18,8 @@ namespace Components {
 		switch (message)
 		{
 		case VK_RETURN:
-			return m_OnClick();
+			m_OnClick();
+			return true;
 		}
 		return false;
 	}

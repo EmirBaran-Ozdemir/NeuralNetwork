@@ -46,7 +46,7 @@ namespace Components {
 		virtual bool OnKeyStroke(UINT message, WPARAM wParam, LPARAM lParam) = 0;
 
 	protected:
-		Component() {
+		Component(bool visible) : m_Visible(visible) {
 			CoCreateGuid(&m_Id);
 			std::cout << "Guid generated succesfully ";
 			m_GuidString = GuidToString(m_Id);

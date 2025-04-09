@@ -5,7 +5,7 @@
 namespace Components {
 	class Dropdown : public Component {
 	public:
-		Dropdown(const std::wstring& menuName, const std::vector<std::wstring>& elements) : m_MenuName(menuName), m_Elements(elements), m_ChoosenElementIndex(-1), m_IsOpen(false) {}
+		Dropdown(const std::wstring& menuName, const std::vector<std::wstring>& elements, bool visible) : Component(visible), m_MenuName(menuName), m_Elements(elements), m_ChoosenElementIndex(-1), m_IsOpen(false) {}
 
 		void Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, ID2D1SolidColorBrush* textBrush, IDWriteTextFormat* textFormat) override;
 		bool OnClick(float mouseX, float mouseY) override;

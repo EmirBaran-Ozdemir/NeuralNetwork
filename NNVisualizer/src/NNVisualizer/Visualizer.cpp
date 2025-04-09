@@ -246,21 +246,16 @@ namespace NNVisualizer {
 				);
 			}
 
-			m_InitializeButton = Components::ComponentFactory::CreateButton(L"Initialize", []()
-				{
-					std::cout << "Now this button is clicked" << std::endl;
-					return true;
-				});
-			m_InitializeButton->SetVisibility(true);
+			m_InitializeButton = Components::ComponentFactory::CreateButton(L"Initialize", [this]() { return this->InitializeButtonFunc(); }, true);
 			m_ComponentList.push_back(m_InitializeButton);
-			m_StartButton = std::make_unique<Components::Button>(L"Start");
-			m_StepButton = std::make_unique<Components::Button>(L"Step");
-			m_StopButton = std::make_unique<Components::Button>(L"Stop");
-			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions());
-			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology");
-			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"Starting Inputs");
-			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outputs");
-			m_MaxEpochTextField = std::make_shared<Components::TextField>(L"Max Epoch");
+			m_StartButton = std::make_unique<Components::Button>(L"Start", true);
+			m_StepButton = std::make_unique<Components::Button>(L"Step", true);
+			m_StopButton = std::make_unique<Components::Button>(L"Stop", true);
+			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions(), true);
+			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology", true);
+			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"Starting Inputs", true);
+			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outputs", true);
+			m_MaxEpochTextField = std::make_shared<Components::TextField>(L"Max Epoch", true);
 
 			if (SUCCEEDED(hr))
 			{
@@ -279,7 +274,7 @@ namespace NNVisualizer {
 	{
 		m_NeuralNetwork = std::move(neuralNetwork);
 		const auto& layers = m_NeuralNetwork->GetLayers();
-		m_LayerExecutionTimeTextField = std::make_shared<Components::TextField>(std::to_wstring(m_NeuralNetwork->GetDisplayProperties().layerExecutionTime));
+		//m_LayerExecutionTimeTextField = std::make_shared<Components::TextField>(std::to_wstring(m_NeuralNetwork->GetDisplayProperties().layerExecutionTime));
 
 		for (const auto& layer : layers)
 		{
@@ -843,43 +838,9 @@ namespace NNVisualizer {
 	//	{
 	//		if (m_ActivationFunctionDropdown->OnClick(cursorX, cursorY))
 	//		{
-	//			int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
-	//			NNCore::NeuronActivation::ActivationFunction activationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
-	//			m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
-	//			return true;
+
 	//		}
-	//		if (m_InitializeButton->OnClick(cursorX, cursorY))
-	//		{
-	//			std::unique_ptr<NNCore::NeuralNetwork> myNN;
-	//			try
-	//			{
-	//				NNCore::NeuralNetworkProperties properties{
-	//					Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetPlaceHolder()),
-	//					Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetPlaceHolder()),
-	//					Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetPlaceHolder()),
-	//					Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetPlaceHolder()),
-	//					m_ActivationFunction
-	//				};
-	//				myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
-	//				this->SetNN(std::move(myNN));
-	//			}
-	//			catch (Utils::Exceptions::NullValueException& exception)
-	//			{
-	//				m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
-	//				return true;
-	//			}
-	//			catch (Utils::Exceptions::ParsingException& exception)
-	//			{
-	//				m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
-	//				return true;
-	//			}
-	//			catch (std::exception exception)
-	//			{
-	//				m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
-	//				return true;
-	//			}
-	//			m_NNInitialized = true;
-	//		}
+	//		
 	//	}
 	//	return false;
 	//}
@@ -932,5 +893,47 @@ namespace NNVisualizer {
 		SafeRelease(&m_WhiteBrush);
 		SafeRelease(&m_LimeGreenBrush);
 
+	}
+
+	void Visualizer::InitializeButtonFunc()
+	{
+		std::unique_ptr<NNCore::NeuralNetwork> myNN;
+		try
+		{
+			NNCore::NeuralNetworkProperties properties{
+				Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetPlaceHolder()),
+				Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetPlaceHolder()),
+				Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetPlaceHolder()),
+				Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetPlaceHolder()),
+				m_ActivationFunction
+			};
+			myNN = std::make_unique<NNCore::NeuralNetwork>(properties);
+			this->SetNN(std::move(myNN));
+		}
+		catch (Utils::Exceptions::NullValueException& exception)
+		{
+			m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+			return;
+		}
+		catch (Utils::Exceptions::ParsingException& exception)
+		{
+			m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+			return;
+		}
+		catch (std::exception exception)
+		{
+			m_ExceptionMessage = Utils::ValueParser::ConvertStringToWstring(exception.what());
+			return;
+		}
+		m_NNInitialized = true;
+		return;
+	}
+
+	void Visualizer::ActivationFunctionFunc()
+	{
+		int activationFunctionIndex = m_ActivationFunctionDropdown->GetChoosenIndex() + 1;
+		NNCore::NeuronActivation::ActivationFunction activationFunction = NNCore::NeuronActivation::ActivationFunction::Null;
+		m_ActivationFunction = static_cast<NNCore::NeuronActivation::ActivationFunction>(activationFunctionIndex);
+		return;
 	}
 }

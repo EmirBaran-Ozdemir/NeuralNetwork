@@ -29,23 +29,23 @@ namespace Components {
 		renderTarget->CreateSolidColorBrush(mediumColor, &s_DropdownBrush);
 	}
 
-	std::unique_ptr<Button> ComponentFactory::CreateButton(const std::wstring& text) {
-		auto button = std::make_unique<Button>(text);
+	std::unique_ptr<Button> ComponentFactory::CreateButton(const std::wstring& text, bool visible) {
+		auto button = std::make_unique<Button>(text, visible);
 		return button;
 	}
 
-	std::unique_ptr<Button> ComponentFactory::CreateButton(const std::wstring& text, std::function<bool()> onClick) {
-		auto button = std::make_unique<Button>(text, onClick);
+	std::unique_ptr<Button> ComponentFactory::CreateButton(const std::wstring& text, std::function<void()> onClick, bool visible) {
+		auto button = std::make_unique<Button>(text, onClick, visible);
 		return button;
 	}
 
-	std::unique_ptr<TextField> ComponentFactory::CreateTextField(const std::wstring& text) {
-		auto textField = std::make_unique<TextField>(text);
+	std::unique_ptr<TextField> ComponentFactory::CreateTextField(const std::wstring& text, bool visible) {
+		auto textField = std::make_unique<TextField>(text, visible);
 		return textField;
 	}
 
-	std::unique_ptr<Dropdown> ComponentFactory::CreateDropdown(const std::wstring& text, const std::vector<std::wstring>& items) {
-		auto dropdown = std::make_unique<Dropdown>(text, items);
+	std::unique_ptr<Dropdown> ComponentFactory::CreateDropdown(const std::wstring& text, const std::vector<std::wstring>& items, bool visible) {
+		auto dropdown = std::make_unique<Dropdown>(text, items, visible);
 		return dropdown;
 	}
 
