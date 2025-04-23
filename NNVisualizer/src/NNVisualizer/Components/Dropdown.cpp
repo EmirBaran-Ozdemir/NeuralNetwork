@@ -3,27 +3,36 @@
 
 namespace Components {
 
-	void Dropdown::Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, ID2D1SolidColorBrush* textBrush, IDWriteTextFormat* textFormat)
+	void Dropdown::Draw()
 	{
-		renderTarget->DrawRectangle(m_Rect, brush);
-		const std::wstring& textToDraw = m_ChoosenElementIndex == -1 ? m_MenuName : m_Elements[m_ChoosenElementIndex];
-		renderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), textFormat, m_Rect, brush);
+		m_DrawProperties->RenderTarget->DrawRectangle(m_BaseBounds, m_DrawProperties->Brush);
+		const std::wstring& textToDraw = m_ChoosenElementIndex == -1 ? m_Label : m_Elements[m_ChoosenElementIndex];
+		m_DrawProperties->RenderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), m_DrawProperties->TextFormat, m_BaseBounds, m_DrawProperties->Brush);
 
 		if (m_IsOpen)
 		{
-			this->DrawElements(renderTarget, brush, textFormat);
+			this->DrawElements();
 		}
 	}
 
-	void Dropdown::DrawElements(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, IDWriteTextFormat* textFormat) {
-		D2D1_RECT_F elementRect = m_Rect;
+	void Dropdown::DrawElements() {
+		D2D1_RECT_F elementRect = m_BaseBounds;
 		for (const auto& element : m_Elements) {
-			elementRect.top += (m_Rect.bottom - m_Rect.top);
-			elementRect.bottom += (m_Rect.bottom - m_Rect.top);
-			renderTarget->DrawRectangle(elementRect, brush);
-			renderTarget->DrawText(element.c_str(), static_cast<UINT32>(element.size()), textFormat, elementRect, brush);
+			elementRect.top += (m_BaseBounds.bottom - m_BaseBounds.top);
+			elementRect.bottom += (m_BaseBounds.bottom - m_BaseBounds.top);
+			m_DrawProperties->RenderTarget->DrawRectangle(elementRect, m_DrawProperties->Brush);
+			m_DrawProperties->RenderTarget->DrawText(element.c_str(), static_cast<UINT32>(element.size()), m_DrawProperties->TextFormat, elementRect, m_DrawProperties->Brush);
 		}
 	}
+
+	void Dropdown::SetComponentBounds()
+	{
+		m_BaseBounds = m_Rect;
+		float elementHeight = m_BaseBounds.bottom - m_BaseBounds.top;
+		m_ExpandedBounds = m_BaseBounds;
+		m_ExpandedBounds.bottom = m_BaseBounds.bottom + elementHeight * m_Elements.size();
+	}
+
 
 	bool Dropdown::OnKeyStroke(UINT message, WPARAM wParam, LPARAM lParam)
 	{
@@ -41,20 +50,14 @@ namespace Components {
 			m_IsOpen = false;
 			return false;
 		}
-		// Check if the main dropdown rectangle is clicked
-		if (Component::OnClick(mouseX, mouseY)) {
-			m_IsOpen = !m_IsOpen;
-			return true;
-		}
-
 		// If the dropdown is open, check each element
 		if (m_IsOpen) {
-			float elementHeight = m_Rect.bottom - m_Rect.top;
-			D2D1_RECT_F elementRect = m_Rect;
+			float elementHeight = m_BaseBounds.bottom - m_BaseBounds.top;
+			D2D1_RECT_F elementRect = m_BaseBounds;
 
 			// Iterate through each element's bounding box
 			for (int elementIndex = 0; elementIndex < m_Elements.size(); ++elementIndex) {
-				elementRect.top = m_Rect.bottom + (elementIndex * elementHeight);
+				elementRect.top = m_BaseBounds.bottom + (elementIndex * elementHeight);
 				elementRect.bottom = elementRect.top + elementHeight;
 
 				// Check if click is within the current element's rectangle
@@ -72,6 +75,17 @@ namespace Components {
 					return true;
 				}
 			}
+		}
+		// Check if the main dropdown rectangle is clicked
+		if (mouseX >= m_BaseBounds.left && mouseX <= m_BaseBounds.right &&
+			mouseY >= m_BaseBounds.top && mouseY <= m_BaseBounds.bottom)
+		{
+			m_IsOpen = !m_IsOpen;
+			if (m_IsOpen) // If opened expand bounds
+				m_Rect = m_ExpandedBounds;
+			else
+				m_Rect = m_BaseBounds;
+			return true;
 		}
 
 		// Close the dropdown if click is outside

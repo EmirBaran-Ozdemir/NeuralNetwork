@@ -7,17 +7,17 @@ namespace NNVisualizer {
 		m_hwnd(NULL),
 		m_Direct2dFactory(NULL),
 		m_DWriteFactory(NULL),
-		m_TextFormat(NULL),
-		m_MenuTextFormat(NULL),
-		m_ErrorTextFormat(NULL),
 		m_RenderTarget(NULL),
-		m_LooseWeightBrush(NULL),
-		m_MediumWeightBrush(NULL),
-		m_TightWeightBrush(NULL),
-		m_BlackBrush(NULL),
-		m_LimeGreenBrush(NULL),
-		m_GrayBrush(NULL),
-		m_WhiteBrush(NULL),
+		//m_TextFormat(NULL),
+		//m_MenuTextFormat(NULL),
+		//m_ErrorTextFormat(NULL),
+		//m_LooseWeightBrush(NULL),
+		//m_MediumWeightBrush(NULL),
+		//m_TightWeightBrush(NULL),
+		//m_BlackBrush(NULL),
+		//m_LimeGreenBrush(NULL),
+		//m_GrayBrush(NULL),
+		//m_WhiteBrush(NULL),,
 		m_HorizontalSpacing(0),
 		m_VerticalSpacing(0),
 		m_Camera(nullptr),
@@ -30,16 +30,16 @@ namespace NNVisualizer {
 	{
 		SafeRelease(&m_RenderTarget);
 		SafeRelease(&m_DWriteFactory);
-		SafeRelease(&m_TextFormat);
-		SafeRelease(&m_MenuTextFormat);
-		SafeRelease(&m_ErrorTextFormat);
-		SafeRelease(&m_LooseWeightBrush);
-		SafeRelease(&m_MediumWeightBrush);
-		SafeRelease(&m_TightWeightBrush);
-		SafeRelease(&m_GrayBrush);
-		SafeRelease(&m_BlackBrush);
-		SafeRelease(&m_WhiteBrush);
-		SafeRelease(&m_LimeGreenBrush);
+		//SafeRelease(&m_TextFormat);
+		//SafeRelease(&m_MenuTextFormat);
+		//SafeRelease(&m_ErrorTextFormat);
+		//SafeRelease(&m_LooseWeightBrush);
+		//SafeRelease(&m_MediumWeightBrush);
+		//SafeRelease(&m_TightWeightBrush);
+		//SafeRelease(&m_GrayBrush);
+		//SafeRelease(&m_BlackBrush);
+		//SafeRelease(&m_WhiteBrush);
+		//SafeRelease(&m_LimeGreenBrush);
 		if (m_TrainingThread.joinable())
 			m_TrainingThread.join();
 	}
@@ -155,117 +155,70 @@ namespace NNVisualizer {
 				&m_RenderTarget
 			);
 
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF::LightGreen),
-					&m_LooseWeightBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create LooseWeightBrush\n"); }
-			}
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF::Yellow),
-					&m_MediumWeightBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create MediumWeightBrush\n"); }
-			}
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF::Red),
-					&m_TightWeightBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create TightWeightBrush\n"); }
-			}
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::LightGray, 0.6)),
-					&m_GrayBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
-			}
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF::Black),
-					&m_BlackBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
-			}
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::LimeGreen, 0.4)),
-					&m_LimeGreenBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
-			}
-			if (SUCCEEDED(hr))
-			{
-				hr = m_RenderTarget->CreateSolidColorBrush(
-					D2D1::ColorF(D2D1::ColorF(D2D1::ColorF::White)),
-					&m_WhiteBrush
-				);
-				if (FAILED(hr)) { OutputDebugString("Failed to create DisabledBrush\n"); }
-			}
+			nlohmann::json config = {
+				{"Colors", {
+					{"Node", {
+						{"Active", {{"r", 1.0}, {"g", 0.0}, {"b", 0.0}, {"a", 1.0}}},
+						{"Deactive", {{"r", 0.0}, {"g", 1.0}, {"b", 0.0}, {"a", 1.0}}}
+					}},
+					{"Weights", {
+						{"Medium", {{"r", 1.0}, {"g", 1.0}, {"b", 0.0}, {"a", 1.0}}}
+					}},
+					{"Text", {{"r", 1.0}, {"g", 1.0}, {"b", 1.0}, {"a", 1.0}}},
+					{"Gray", {{"r", 0.827}, {"g", 0.827}, {"b", 0.827}, {"a", 0.6}}},
+					{"Black", {{"r", 0.0}, {"g", 0.0}, {"b", 0.0}, {"a", 1.0}}},
+					{"LimeGreen", {{"r", 0.0}, {"g", 1.0}, {"b", 0.0}, {"a", 0.4}}}
+				}},
+				{"TextFormats", {
+					{"Default", {
+						{"Font", "Sans Serif"},
+						{"Size", 8.0},
+						{"Weight", "Regular"},
+						{"Style", "Normal"},
+						{"Stretch", "Normal"},
+						{"Locale", "en-us"}
+					}},
+					{"Error", {
+						{"Font", "Sans Serif"},
+						{"Size", 24.0},
+						{"Weight", "Regular"},
+						{"Style", "Normal"},
+						{"Stretch", "Normal"},
+						{"Locale", "en-us"}
+					}},
+					{"Menu", {
+						{"Font", "Sans Serif"},
+						{"Size", 16.0},
+						{"Weight", "Regular"},
+						{"Style", "Normal"},
+						{"Stretch", "Normal"},
+						{"Locale", "en-us"}
+					}}
+				}}
+			};
+			Components::ComponentFactory::InitializeBrushes(m_RenderTarget, config);
 
-			if (SUCCEEDED(hr))
-			{
-				hr = m_DWriteFactory->CreateTextFormat(
-					L"Sans Serif",
-					NULL,
-					DWRITE_FONT_WEIGHT_REGULAR,
-					DWRITE_FONT_STYLE_NORMAL,
-					DWRITE_FONT_STRETCH_NORMAL,
-					8.0f,
-					L"en-us",
-					&m_TextFormat
-				);
-				hr = m_DWriteFactory->CreateTextFormat(
-					L"Sans Serif",
-					NULL,
-					DWRITE_FONT_WEIGHT_REGULAR,
-					DWRITE_FONT_STYLE_NORMAL,
-					DWRITE_FONT_STRETCH_NORMAL,
-					24.0f,
-					L"en-us",
-					&m_ErrorTextFormat
-				);
-				hr = m_DWriteFactory->CreateTextFormat(
-					L"Sans Serif",
-					NULL,
-					DWRITE_FONT_WEIGHT_REGULAR,
-					DWRITE_FONT_STYLE_NORMAL,
-					DWRITE_FONT_STRETCH_NORMAL,
-					16.0f,
-					L"en-us",
-					&m_MenuTextFormat
-				);
-			}
+			m_InitializeButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Initialize", true);
+			m_InitializeButton->SetFunction([this]() { return this->InitializeButtonFunc(); });
+			m_StartButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Start", true);
+			m_StepButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Step", true);
+			m_StopButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Stop", true);
+			m_ActivationFunctionDropdown = Components::ComponentFactory::CreateAndRegisterDropdown(m_ComponentList, L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions());
 
-			m_InitializeButton = Components::ComponentFactory::CreateButton(L"Initialize", [this]() { return this->InitializeButtonFunc(); }, true);
-			m_ComponentList.push_back(m_InitializeButton);
-			m_StartButton = std::make_unique<Components::Button>(L"Start", true);
-			m_StepButton = std::make_unique<Components::Button>(L"Step", true);
-			m_StopButton = std::make_unique<Components::Button>(L"Stop", true);
-			m_ActivationFunctionDropdown = std::make_unique<Components::Dropdown>(L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions(), true);
-			m_TopologyTextField = std::make_shared<Components::TextField>(L"Topology", true);
-			m_StartingInputsTextField = std::make_shared<Components::TextField>(L"Starting Inputs", true);
-			m_TargetOutputsTextField = std::make_shared<Components::TextField>(L"Target Outputs", true);
-			m_MaxEpochTextField = std::make_shared<Components::TextField>(L"Max Epoch", true);
+			m_TopologyTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Topology", true);
+			m_StartingInputsTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Starting Inputs", true);
+			m_TargetOutputsTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Target Outputs", true);
+			m_MaxEpochTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Max Epoch", true);
 
-			if (SUCCEEDED(hr))
-			{
-				m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-				m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-				m_MenuTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-				m_MenuTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-				m_ErrorTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-				m_ErrorTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-			}
+			//if (SUCCEEDED(hr))
+			//{
+			//	m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+			//	m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+			//	m_MenuTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+			//	m_MenuTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+			//	m_ErrorTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+			//	m_ErrorTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+			//}
 		}
 		return hr;
 	}
@@ -337,14 +290,14 @@ namespace NNVisualizer {
 					m_RenderTarget->DrawText(
 						m_ExceptionMessage.c_str(),
 						static_cast<UINT32>(m_ExceptionMessage.size()),
-						m_ErrorTextFormat,
+						Components::ComponentFactory::s_ErrorTextFormat,
 						D2D1::RectF(
 							000.0f,
 							000.0f,
 							m_ViewportWidth,
 							m_ViewportHeight
 						),
-						m_BlackBrush
+						Components::ComponentFactory::s_BlackBrush
 					);
 				}
 				float componentWidth = 200.0f;
@@ -354,30 +307,29 @@ namespace NNVisualizer {
 				float xCenter = static_cast<float>(m_ViewportWidth) / 2 - ((componentWidth * 2.5f) + (componentXSpacing * 2.0f));
 				float yCenter = static_cast<float>(m_ViewportHeight) / 2 - (componentWidth);
 				m_InitializeButton->SetBounds(xCenter + (componentWidth * 2.0f + componentXSpacing * 2.0f), yCenter - 80.0f, componentWidth, componentHeight);
-				m_InitializeButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
+				m_InitializeButton->SafeDraw();
 				float componentXOffset = 0.0f;
-				m_ActivationFunctionDropdown->SetBounds(xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
-				m_ActivationFunctionDropdown->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
+				if (!m_ActivationFunctionDropdown->IsBoundsSet())
+					m_ActivationFunctionDropdown->SetBounds(xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				m_ActivationFunctionDropdown->SafeDraw();
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_TopologyTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_TopologyTextField, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_StartingInputsTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_StartingInputsTextField, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_TargetOutputsTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_TargetOutputsTextField, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 				componentXOffset += componentWidth + componentXSpacing;
-				this->DrawTextField(m_MaxEpochTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+				this->DrawTextField(m_MaxEpochTextField, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
 			}
 			else
 			{
 				this->DrawProperties();
 				m_StartButton->SetBounds(10.0f, 10.0f, 100.0f, 50.0f);
-				m_StartButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
+				m_StartButton->SafeDraw();
 				m_StepButton->SetBounds(110.0f, 10.0f, 100.0f, 50.0f);
-				m_StepButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
+				m_StepButton->SafeDraw();
 				m_StopButton->SetBounds(210.0f, 10.0f, 100.0f, 50.0f);
-				m_StopButton->Draw(m_RenderTarget, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat);
-
-
+				m_StopButton->SafeDraw();
 			}
 
 			m_RenderTarget->SetTransform(previousTransform);
@@ -484,7 +436,7 @@ namespace NNVisualizer {
 				layoutRect.right + 5,
 				layoutRect.bottom + 5
 			);
-			this->DrawTextField(m_LayerExecutionTimeTextField, m_RenderTarget, m_BlackBrush, m_LimeGreenBrush, m_BlackBrush, m_WhiteBrush, m_MenuTextFormat, &borderRect);
+			this->DrawTextField(m_LayerExecutionTimeTextField, &borderRect);
 		}
 		else if (m_NeuralNetwork->GetLoopState() == NNCore::LoopState::Stopping)
 		{
@@ -500,14 +452,14 @@ namespace NNVisualizer {
 
 	void Visualizer::DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect, bool slideRect, bool drawBorder)
 	{
-		m_RenderTarget->DrawTextA(text.c_str(), static_cast<UINT32>(text.size()), m_MenuTextFormat, layoutRect, m_BlackBrush);
+		m_RenderTarget->DrawTextA(text.c_str(), static_cast<UINT32>(text.size()), Components::ComponentFactory::s_MenuTextFormat, layoutRect, Components::ComponentFactory::s_BlackBrush);
 		D2D1_RECT_F borderRect = D2D1::RectF(
 			layoutRect.left - 5,
 			layoutRect.top - 5,
 			layoutRect.right + 5,
 			layoutRect.bottom + 5
 		);
-		if (drawBorder) m_RenderTarget->DrawRectangle(borderRect, m_BlackBrush);
+		if (drawBorder) m_RenderTarget->DrawRectangle(borderRect, Components::ComponentFactory::s_BlackBrush);
 
 		if (slideRect)
 		{
@@ -518,20 +470,26 @@ namespace NNVisualizer {
 
 	void Visualizer::DrawNode(D2D1_POINT_2F position, float radius, double value, bool isChoosen, bool isProcessing)
 	{
-		ID2D1SolidColorBrush* brush = m_BlackBrush;
+		using namespace Components;
+
+		// Varsayýlan fýrça: s_BlackBrush
+		ID2D1SolidColorBrush* brush = ComponentFactory::s_BlackBrush;
 		if (isChoosen)
 		{
-			brush = m_BlackBrush;
+			brush = ComponentFactory::s_BlackBrush;
 		}
 		else if (isProcessing)
 		{
-			brush = m_LimeGreenBrush;
+			brush = ComponentFactory::s_LimeGreenBrush;
 		}
 		else if ((m_ChoosenNeuronColRow.first != -1) && (m_ChoosenNeuronColRow.second != -1))
 		{
-			brush = m_GrayBrush;
+			brush = ComponentFactory::s_GrayBrush;
 		}
 
+		// Güvenlik kontrolü: fýrça ve render target mevcut mu?
+		if (!brush || !m_RenderTarget)
+			return;
 
 		D2D1_ELLIPSE ellipse = D2D1::Ellipse(position, radius, radius);
 		m_RenderTarget->DrawEllipse(&ellipse, brush);
@@ -542,43 +500,53 @@ namespace NNVisualizer {
 		std::wstring valueStr = wss.str();
 
 		D2D1_RECT_F layoutRect = D2D1::RectF(
-			position.x + radius,
-			position.y + radius,
 			position.x - radius,
-			position.y - radius
+			position.y - radius,
+			position.x + radius,
+			position.y + radius
 		);
 
-		m_RenderTarget->DrawText(
-			valueStr.c_str(),
-			static_cast<UINT32>(valueStr.size()),
-			m_TextFormat,
-			layoutRect,
-			brush
-		);
+		// Metin çizimi için s_TextFormat kullan
+		if (ComponentFactory::s_TextFormat)
+		{
+			m_RenderTarget->DrawText(
+				valueStr.c_str(),
+				static_cast<UINT32>(valueStr.size()),
+				ComponentFactory::s_TextFormat,
+				layoutRect,
+				brush
+			);
+		}
 	}
 
 	void Visualizer::DrawWeight(D2D1_POINT_2F start, D2D1_POINT_2F end, float weight, bool isConnectedToChoosen)
 	{
+		using namespace Components;
+
 		ID2D1SolidColorBrush* brush;
 		if (((m_ChoosenNeuronColRow.first == -1) && (m_ChoosenNeuronColRow.second == -1)) || isConnectedToChoosen)
 		{
 			if (weight < 0.33)
 			{
-				brush = m_LooseWeightBrush;
+				brush = ComponentFactory::s_TextFieldBrush;
 			}
 			else if (weight < 0.66)
 			{
-				brush = m_MediumWeightBrush;
+				brush = ComponentFactory::s_DropdownBrush;
 			}
 			else
 			{
-				brush = m_TightWeightBrush;
+				brush = ComponentFactory::s_ButtonBrush;
 			}
 		}
 		else
 		{
-			brush = m_GrayBrush;
+			brush = ComponentFactory::s_GrayBrush;
 		}
+
+		if (!brush || !m_RenderTarget)
+			return;
+
 		m_RenderTarget->DrawLine(start, end, brush, 0.5f);
 	}
 
@@ -642,11 +610,22 @@ namespace NNVisualizer {
 				{
 
 					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
-					if (pVisualizer->GetFocusedComponent() == nullptr)
+
+					if (!pVisualizer->HandleMouseClick(worldCursorPos)) // None of the components is clicked
 					{
-						pVisualizer->HandleMouseClick(worldCursorPos);
+						result = 0;
+						pVisualizer->SetFocusedComponent(nullptr);
+						wasHandled = true;
+						break;
 					}
-					pVisualizer->GetEventHandler()->HandleMouseClick(pVisualizer->GetFocusedComponent(), worldCursorPos);
+
+					if (pVisualizer->GetEventHandler()->HandleMouseClick(pVisualizer->GetFocusedComponent(), worldCursorPos))
+					{
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+
 
 					result = 0;
 					wasHandled = true;
@@ -735,16 +714,17 @@ namespace NNVisualizer {
 		InvalidateRect(m_hwnd, NULL, FALSE);
 	}
 
-	void Visualizer::HandleMouseClick(const POINT& worldCursorPos)
+	bool Visualizer::HandleMouseClick(const POINT& worldCursorPos)
 	{
 		for (auto const& component : m_ComponentList)
 		{
 			if (component->IsClickInBounds(worldCursorPos.x, worldCursorPos.y))
 			{
 				SetFocusedComponent(component);
-				break;
+				return true;
 			}
 		}
+		return false;
 	}
 
 	//bool Visualizer::HandleNodeClick(int mouseX, int mouseY)
@@ -847,7 +827,7 @@ namespace NNVisualizer {
 
 	void Visualizer::UpdateTextFormat()
 	{
-		SafeRelease(&m_TextFormat);
+		SafeRelease(&Components::ComponentFactory::s_TextFormat);
 
 		HRESULT hr = m_DWriteFactory->CreateTextFormat(
 			L"Sans Serif",
@@ -857,15 +837,83 @@ namespace NNVisualizer {
 			DWRITE_FONT_STRETCH_NORMAL,
 			8.0f,
 			L"en-us",
-			&m_TextFormat
+			&Components::ComponentFactory::s_TextFormat
 		);
 
 		if (SUCCEEDED(hr))
 		{
-			m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-			m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+			Components::ComponentFactory::s_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+			Components::ComponentFactory::s_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 		}
 	}
+	void Visualizer::DrawTextField(std::shared_ptr<Components::TextField>& textField, float x, float y, float width, float height) const
+	{
+		using namespace Components;
+
+		bool isSelected = false;
+		if (auto focusedComp = std::dynamic_pointer_cast<Components::TextField>(m_FocusedComponent))
+		{
+			isSelected = textField == focusedComp;
+		}
+
+		textField->SetBounds(x, y, width, height);
+
+		if (isSelected)
+		{
+			textField->AddUpdateDrawProperties(
+				ComponentFactory::s_RenderTarget,
+				ComponentFactory::s_LimeGreenBrush,
+				ComponentFactory::s_BlackBrush,
+				ComponentFactory::s_TextFormat
+			);
+		}
+		else
+		{
+			textField->AddUpdateDrawProperties(
+				ComponentFactory::s_RenderTarget,
+				ComponentFactory::s_TextFieldBrush,
+				ComponentFactory::s_TextBrush,
+				ComponentFactory::s_TextFormat
+			);
+		}
+
+		textField->SafeDraw();
+	}
+
+	void Visualizer::DrawTextField(std::shared_ptr<Components::TextField>& textField, D2D1_RECT_F* rectangle) const
+	{
+		using namespace Components;
+
+		bool isSelected = false;
+		if (auto focusedComp = std::dynamic_pointer_cast<Components::TextField>(m_FocusedComponent))
+		{
+			isSelected = textField == focusedComp;
+		}
+
+		textField->SetBounds(*rectangle);
+
+		if (isSelected)
+		{
+			textField->AddUpdateDrawProperties(
+				ComponentFactory::s_RenderTarget,
+				ComponentFactory::s_LimeGreenBrush,
+				ComponentFactory::s_BlackBrush,
+				ComponentFactory::s_TextFormat
+			);
+		}
+		else
+		{
+			textField->AddUpdateDrawProperties(
+				ComponentFactory::s_RenderTarget,
+				ComponentFactory::s_TextFieldBrush,
+				ComponentFactory::s_TextBrush,
+				ComponentFactory::s_TextFormat
+			);
+		}
+
+		textField->SafeDraw();
+	}
+
 	void Visualizer::OnResize(UINT width, UINT height)
 	{
 		if (m_RenderTarget)
@@ -882,17 +930,17 @@ namespace NNVisualizer {
 	{
 		SafeRelease(&m_RenderTarget);
 		SafeRelease(&m_DWriteFactory);
-		SafeRelease(&m_TextFormat);
-		SafeRelease(&m_MenuTextFormat);
-		SafeRelease(&m_ErrorTextFormat);
-		SafeRelease(&m_LooseWeightBrush);
-		SafeRelease(&m_MediumWeightBrush);
-		SafeRelease(&m_TightWeightBrush);
-		SafeRelease(&m_GrayBrush);
-		SafeRelease(&m_BlackBrush);
-		SafeRelease(&m_WhiteBrush);
-		SafeRelease(&m_LimeGreenBrush);
-
+		//SafeRelease(&m_TextFormat);
+		//SafeRelease(&m_MenuTextFormat);
+		//SafeRelease(&m_ErrorTextFormat);
+		//SafeRelease(&m_LooseWeightBrush);
+		//SafeRelease(&m_MediumWeightBrush);
+		//SafeRelease(&m_TightWeightBrush);
+		//SafeRelease(&m_GrayBrush);
+		//SafeRelease(&m_BlackBrush);
+		//SafeRelease(&m_WhiteBrush);
+		//SafeRelease(&m_LimeGreenBrush);
+		Components::ComponentFactory::ReleaseResources();
 	}
 
 	void Visualizer::InitializeButtonFunc()
@@ -901,10 +949,10 @@ namespace NNVisualizer {
 		try
 		{
 			NNCore::NeuralNetworkProperties properties{
-				Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetPlaceHolder()),
-				Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetPlaceHolder()),
-				Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetPlaceHolder()),
-				Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetPlaceHolder()),
+				Utils::ValueParser::ConvertWStringToIntVector(m_TopologyTextField->GetText(), m_TopologyTextField->GetLabel()),
+				Utils::ValueParser::ConvertWStringToDoubleVector(m_StartingInputsTextField->GetText(),m_StartingInputsTextField->GetLabel()),
+				Utils::ValueParser::ConvertWStringToDoubleVector(m_TargetOutputsTextField->GetText(),m_TargetOutputsTextField->GetLabel()),
+				Utils::ValueParser::ConvertWStringToInt(m_MaxEpochTextField->GetText(), m_MaxEpochTextField->GetLabel()),
 				m_ActivationFunction
 			};
 			myNN = std::make_unique<NNCore::NeuralNetwork>(properties);

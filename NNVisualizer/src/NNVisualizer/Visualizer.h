@@ -5,6 +5,9 @@
 #include "Renderer/Camera.h"
 #include "Components/ComponentFactory.h"
 #include "Events/EventHandler.h"
+#include "Components/DropdownBuilder.h"
+#include "Components/ButtonBuilder.h"
+#include "Components/TextFieldBuilder.h"
 
 namespace NNVisualizer {
 
@@ -34,7 +37,7 @@ namespace NNVisualizer {
 		void ZoomOut(float cursorX, float cursorY);
 		void OnResize(UINT width, UINT height);
 
-		void HandleMouseClick(const POINT& worldCursorPos);
+		bool HandleMouseClick(const POINT& worldCursorPos);
 		void SetFocusedComponent(const std::shared_ptr<Components::Component>& component) { m_FocusedComponent = component; }
 
 		void UpdateTextFormat();
@@ -47,40 +50,9 @@ namespace NNVisualizer {
 			);
 		}
 
-		void DrawTextField(std::shared_ptr<Components::TextField>& textField,
-			ID2D1HwndRenderTarget* renderTarget,
-			ID2D1SolidColorBrush* normalBrush,
-			ID2D1SolidColorBrush* selectedBrush,
-			ID2D1SolidColorBrush* normalTextBrush,
-			ID2D1SolidColorBrush* selectedTextBrush,
-			IDWriteTextFormat* textFormat,
-			float x, float y, float width, float height)
-		{
-			bool isSelected = false;
-			if (auto focusedComp = std::dynamic_pointer_cast<Components::TextField>(m_FocusedComponent))
-			{
-				isSelected = textField == focusedComp;
-			}
-			textField->SetBounds(x, y, width, height);
-			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat);
-		}
-		void DrawTextField(std::shared_ptr<Components::TextField>& textField,
-			ID2D1HwndRenderTarget* renderTarget,
-			ID2D1SolidColorBrush* normalBrush,
-			ID2D1SolidColorBrush* selectedBrush,
-			ID2D1SolidColorBrush* normalTextBrush,
-			ID2D1SolidColorBrush* selectedTextBrush,
-			IDWriteTextFormat* textFormat,
-			D2D1_RECT_F* rectangle)
-		{
-			bool isSelected = false;
-			if (auto focusedComp = std::dynamic_pointer_cast<Components::TextField>(m_FocusedComponent))
-			{
-				isSelected = textField == focusedComp;
-			}
-			textField->SetBounds(*rectangle);
-			textField->Draw(renderTarget, isSelected ? selectedBrush : normalBrush, isSelected ? selectedTextBrush : normalTextBrush, textFormat);
-		}
+
+		void DrawTextField(std::shared_ptr<Components::TextField>& textField, float x, float y, float width, float height) const;
+		void DrawTextField(std::shared_ptr<Components::TextField>& textField, D2D1_RECT_F* rectangle) const;
 
 		//! Component Functions
 		void InitializeButtonFunc();
@@ -93,19 +65,24 @@ namespace NNVisualizer {
 		IDWriteFactory* m_DWriteFactory;
 		ID2D1HwndRenderTarget* m_RenderTarget;
 
-		//! Text Formats
-		IDWriteTextFormat* m_TextFormat;
-		IDWriteTextFormat* m_MenuTextFormat;
-		IDWriteTextFormat* m_ErrorTextFormat;
+		////! Text Formats
+		//IDWriteTextFormat* m_TextFormat;
+		//IDWriteTextFormat* m_MenuTextFormat;
+		//IDWriteTextFormat* m_ErrorTextFormat;
 
-		//! Brushes
-		ID2D1SolidColorBrush* m_LooseWeightBrush;
-		ID2D1SolidColorBrush* m_MediumWeightBrush;
-		ID2D1SolidColorBrush* m_TightWeightBrush;
-		ID2D1SolidColorBrush* m_GrayBrush;
-		ID2D1SolidColorBrush* m_BlackBrush;
-		ID2D1SolidColorBrush* m_LimeGreenBrush;
-		ID2D1SolidColorBrush* m_WhiteBrush;
+		////! Brushes
+		//ID2D1SolidColorBrush* m_LooseWeightBrush;
+		//ID2D1SolidColorBrush* m_MediumWeightBrush;
+		//ID2D1SolidColorBrush* m_TightWeightBrush;
+		//ID2D1SolidColorBrush* m_GrayBrush;
+		//ID2D1SolidColorBrush* m_BlackBrush;
+		//ID2D1SolidColorBrush* m_LimeGreenBrush;
+		//ID2D1SolidColorBrush* m_WhiteBrush;
+
+		//! Builders
+		Components::DropdownBuilder m_DropdownBuilder;
+		Components::ButtonBuilder m_ButtonBuilder;
+		Components::TextFieldBuilder m_TextFieldBuilder;
 
 		Renderer::Camera* m_Camera;
 
@@ -146,7 +123,5 @@ namespace NNVisualizer {
 		//! Multi-Threading
 		std::future<void> m_TrainingFuture;
 		std::thread m_TrainingThread;
-
-
 	};
 }

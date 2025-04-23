@@ -2,18 +2,12 @@
 
 namespace Components {
 
-	void TextField::Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, ID2D1SolidColorBrush* textBrush, IDWriteTextFormat* textFormat)
+	void TextField::Draw()
 	{
-		if (m_Choosen)
-		{
-			renderTarget->FillRectangle(m_Rect, brush);
-		}
-		else
-		{
-			renderTarget->DrawRectangle(m_Rect, brush);
-		}
-		const std::wstring& textToDraw = m_TextInput.empty() ? m_Placeholder : m_TextInput;
-		renderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), textFormat, m_Rect, textBrush);
+		if (!IsDrawPropertiesSet()) return;
+		m_DrawProperties->RenderTarget->DrawRectangle(m_Rect, m_DrawProperties->Brush);
+		const std::wstring& textToDraw = m_TextInput.empty() ? m_Label : m_TextInput;
+		m_DrawProperties->RenderTarget->DrawText(textToDraw.c_str(), static_cast<UINT32>(textToDraw.size()), m_DrawProperties->TextFormat, m_Rect, m_DrawProperties->TextBrush);
 	}
 
 	bool TextField::OnKeyStroke(UINT message, WPARAM wParam, LPARAM lParam)
@@ -58,10 +52,8 @@ namespace Components {
 
 	bool TextField::OnClick(float mouseX, float mouseY) {
 		if (Component::OnClick(mouseX, mouseY)) {
-			m_Choosen = true; // Set this field as active
 			return true;
 		}
-		m_Choosen = false; // Unfocus if clicked outside
 		return false;
 	}
 }

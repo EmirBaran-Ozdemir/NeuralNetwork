@@ -1,18 +1,42 @@
 NNConfiguration : 
 {
-	Colors: 
-	{
-		BGColor:LightBlue,
-		Node:
-		{
-			Active:Lime,
-			Deactive:Black,
-		}
-		Weights: 
-		{
-			Loose:Green,
-			Medium:Orange,
-			Teight:Red,
-		}
-	}
+    "Colors": {
+        "Node": {
+            "Active": {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0}, // Red for s_ButtonBrush
+            "Deactive": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 1.0} // Green for s_TextFieldBrush
+        },
+        "Weights": {
+            "Medium": {"r": 1.0, "g": 1.0, "b": 0.0, "a": 1.0} // Yellow for s_DropdownBrush
+        },
+        "Text": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}, // White for s_TextBrush
+        "Gray": {"r": 0.827, "g": 0.827, "b": 0.827, "a": 0.6}, // LightGray for s_GrayBrush
+        "Black": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0}, // Black for s_BlackBrush
+        "LimeGreen": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 0.4} // LimeGreen for s_LimeGreenBrush
+    },
+    "TextFormats": {
+        "Default": {
+            "Font": "Sans Serif",
+            "Size": 8.0,
+            "Weight": "Regular",
+            "Style": "Normal",
+            "Stretch": "Normal",
+            "Locale": "en-us"
+        },
+        "Error": {
+            "Font": "Sans Serif",
+            "Size": 24.0,
+            "Weight": "Regular",
+            "Style": "Normal",
+            "Stretch": "Normal",
+            "Locale": "en-us"
+        },
+        "Menu": {
+            "Font": "Sans Serif",
+            "Size": 16.0,
+            "Weight": "Regular",
+            "Style": "Normal",
+            "Stretch": "Normal",
+            "Locale": "en-us"
+        }
+    }
 }

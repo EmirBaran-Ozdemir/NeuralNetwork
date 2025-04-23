@@ -2,13 +2,13 @@
 
 namespace Components {
 
-	void Button::Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, ID2D1SolidColorBrush* textBrush, IDWriteTextFormat* textFormat)
+	void Button::Draw()
 	{
-		renderTarget->DrawRectangle(m_Rect, brush);
-		renderTarget->DrawText(m_Text.c_str(), static_cast<UINT32>(m_Text.size()), textFormat, m_Rect, textBrush);
+		m_DrawProperties->RenderTarget->DrawRectangle(m_Rect, m_DrawProperties->Brush);
+		m_DrawProperties->RenderTarget->DrawText(m_Label.c_str(), static_cast<UINT32>(m_Label.size()), m_DrawProperties->TextFormat, m_Rect, m_DrawProperties->TextBrush);
 	}
 
-	void Button::SetOnClick(std::function<void()> onClick)
+	void Button::SetFunction(std::function<void()> onClick)
 	{
 		m_OnClick = onClick;
 	}

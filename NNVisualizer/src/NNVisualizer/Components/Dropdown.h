@@ -5,22 +5,27 @@
 namespace Components {
 	class Dropdown : public Component {
 	public:
-		Dropdown(const std::wstring& menuName, const std::vector<std::wstring>& elements, bool visible) : Component(visible), m_MenuName(menuName), m_Elements(elements), m_ChoosenElementIndex(-1), m_IsOpen(false) {}
+		Dropdown(const std::wstring& label, const std::vector<std::wstring>& elements) : Component(label), m_Elements(elements) {}
+		Dropdown(const std::wstring& label, const std::vector<std::wstring>& elements, DrawProperties* drawProps, bool visible) : Component(label, drawProps, visible), m_Elements(elements) {}
 
-		void Draw(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, ID2D1SolidColorBrush* textBrush, IDWriteTextFormat* textFormat) override;
 		bool OnClick(float mouseX, float mouseY) override;
 		bool OnKeyStroke(UINT message, WPARAM wParam, LPARAM lParam) override;
 		int GetChoosenIndex() const { return m_ChoosenElementIndex; }
+		void OnBoundsSet() override {
+			SetComponentBounds();
+		}
 
 	private:
-		void DrawElements(ID2D1HwndRenderTarget* renderTarget, ID2D1SolidColorBrush* brush, IDWriteTextFormat* textFormat);
+		void SetComponentBounds();
+		void Draw() override;
+		void DrawElements();
 
 	private:
-		std::wstring m_MenuName = L"";
 		std::vector<std::wstring> m_Elements;
 		bool m_IsOpen = false;
-		int m_ChoosenElementIndex;
-		std::function<void(int)> m_OnSelect;
-
+		int m_ChoosenElementIndex = -1;
+		std::function<void(int)> m_OnSelect = nullptr;
+		D2D1_RECT_F m_ExpandedBounds{ -1.0f,-1.0f,-1.0f,-1.0f };
+		D2D1_RECT_F m_BaseBounds{ -1.0f,-1.0f,-1.0f,-1.0f };
 	};
 }
