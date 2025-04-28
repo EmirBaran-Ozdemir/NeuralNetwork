@@ -11,6 +11,7 @@
 
 namespace NNVisualizer {
 
+
 	class Visualizer
 	{
 	public:
@@ -60,24 +61,12 @@ namespace NNVisualizer {
 		void ActivationFunctionFunc();
 
 	private:
+
+
 		HWND m_hwnd;
 		ID2D1Factory* m_Direct2dFactory;
 		IDWriteFactory* m_DWriteFactory;
 		ID2D1HwndRenderTarget* m_RenderTarget;
-
-		////! Text Formats
-		//IDWriteTextFormat* m_TextFormat;
-		//IDWriteTextFormat* m_MenuTextFormat;
-		//IDWriteTextFormat* m_ErrorTextFormat;
-
-		////! Brushes
-		//ID2D1SolidColorBrush* m_LooseWeightBrush;
-		//ID2D1SolidColorBrush* m_MediumWeightBrush;
-		//ID2D1SolidColorBrush* m_TightWeightBrush;
-		//ID2D1SolidColorBrush* m_GrayBrush;
-		//ID2D1SolidColorBrush* m_BlackBrush;
-		//ID2D1SolidColorBrush* m_LimeGreenBrush;
-		//ID2D1SolidColorBrush* m_WhiteBrush;
 
 		//! Builders
 		Components::DropdownBuilder m_DropdownBuilder;

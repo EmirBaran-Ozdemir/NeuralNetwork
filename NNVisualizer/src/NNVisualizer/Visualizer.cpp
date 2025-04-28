@@ -3,21 +3,13 @@
 
 namespace NNVisualizer {
 
+	//! SYSTEM
+	static bool s_PanicMode = false;
 	Visualizer::Visualizer() :
 		m_hwnd(NULL),
 		m_Direct2dFactory(NULL),
 		m_DWriteFactory(NULL),
 		m_RenderTarget(NULL),
-		//m_TextFormat(NULL),
-		//m_MenuTextFormat(NULL),
-		//m_ErrorTextFormat(NULL),
-		//m_LooseWeightBrush(NULL),
-		//m_MediumWeightBrush(NULL),
-		//m_TightWeightBrush(NULL),
-		//m_BlackBrush(NULL),
-		//m_LimeGreenBrush(NULL),
-		//m_GrayBrush(NULL),
-		//m_WhiteBrush(NULL),,
 		m_HorizontalSpacing(0),
 		m_VerticalSpacing(0),
 		m_Camera(nullptr),
@@ -30,16 +22,6 @@ namespace NNVisualizer {
 	{
 		SafeRelease(&m_RenderTarget);
 		SafeRelease(&m_DWriteFactory);
-		//SafeRelease(&m_TextFormat);
-		//SafeRelease(&m_MenuTextFormat);
-		//SafeRelease(&m_ErrorTextFormat);
-		//SafeRelease(&m_LooseWeightBrush);
-		//SafeRelease(&m_MediumWeightBrush);
-		//SafeRelease(&m_TightWeightBrush);
-		//SafeRelease(&m_GrayBrush);
-		//SafeRelease(&m_BlackBrush);
-		//SafeRelease(&m_WhiteBrush);
-		//SafeRelease(&m_LimeGreenBrush);
 		if (m_TrainingThread.joinable())
 			m_TrainingThread.join();
 	}
@@ -155,29 +137,38 @@ namespace NNVisualizer {
 				&m_RenderTarget
 			);
 
-			Components::ComponentFactory::InitializeBrushes(m_RenderTarget, "Theme/Configuration.nnc");
+			Components::ComponentFactory::InitializeBrushes(m_RenderTarget, "Configuration.nnc");
 
 			m_InitializeButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Initialize", true);
 			m_InitializeButton->SetFunction([this]() { return this->InitializeButtonFunc(); });
+			m_InitializeButton->AddUpdateDrawProperties(
+				Components::ComponentFactory::s_RenderTarget,
+				Components::ComponentFactory::s_DefaultComponentBorderBrush,
+				Components::ComponentFactory::s_DefaultComponentTextBrush,
+				Components::ComponentFactory::s_TextFormat
+			);
 			m_StartButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Start", true);
 			m_StepButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Step", true);
 			m_StopButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Stop", true);
 			m_ActivationFunctionDropdown = Components::ComponentFactory::CreateAndRegisterDropdown(m_ComponentList, L"Activation Function", NNCore::NeuronActivation::GetAllActivationFunctions());
-
+			m_ActivationFunctionDropdown->AddUpdateDrawProperties(
+				Components::ComponentFactory::s_RenderTarget,
+				Components::ComponentFactory::s_DefaultComponentBorderBrush,
+				Components::ComponentFactory::s_DefaultComponentTextBrush,
+				Components::ComponentFactory::s_TextFormat
+			);
 			m_TopologyTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Topology", true);
 			m_StartingInputsTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Starting Inputs", true);
 			m_TargetOutputsTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Target Outputs", true);
 			m_MaxEpochTextField = Components::ComponentFactory::CreateAndRegisterTextField(m_ComponentList, L"Max Epoch", true);
 
-			//if (SUCCEEDED(hr))
-			//{
-			//	m_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-			//	m_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-			//	m_MenuTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-			//	m_MenuTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-			//	m_ErrorTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-			//	m_ErrorTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-			//}
+			if (SUCCEEDED(hr))
+			{
+				Components::ComponentFactory::s_TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+				Components::ComponentFactory::s_TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+				Components::ComponentFactory::s_ErrorTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+				Components::ComponentFactory::s_ErrorTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+			}
 		}
 		return hr;
 	}
@@ -220,6 +211,8 @@ namespace NNVisualizer {
 
 	HRESULT Visualizer::OnRender()
 	{
+		if (s_PanicMode)
+			return 0;
 		HRESULT hr = CreateDeviceResources();
 		if (SUCCEEDED(hr))
 		{
@@ -270,6 +263,7 @@ namespace NNVisualizer {
 				float componentXOffset = 0.0f;
 				if (!m_ActivationFunctionDropdown->IsBoundsSet())
 					m_ActivationFunctionDropdown->SetBounds(xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
+
 				m_ActivationFunctionDropdown->SafeDraw();
 				componentXOffset += componentWidth + componentXSpacing;
 				this->DrawTextField(m_TopologyTextField, xCenter + componentXOffset, yCenter, componentWidth, componentHeight);
@@ -511,8 +505,9 @@ namespace NNVisualizer {
 
 	LRESULT CALLBACK Visualizer::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
+		if (s_PanicMode)
+			return 0;
 		try {
-
 			LRESULT result = 0;
 			if (message == WM_CREATE)
 			{
@@ -638,16 +633,19 @@ namespace NNVisualizer {
 		}
 		catch (const std::exception& e)
 		{
+			s_PanicMode = true;
 			fmt::print(fg(fmt::color::red), "[WndProc] Unhandled Exception: {}\n", e.what());
 			DestroyWindow(hwnd);
-			::MessageBoxA(hwnd, e.what(), "Unhandled Exception", MB_ICONERROR | MB_OK);
+			PostQuitMessage(0);
 		}
 		catch (...)
 		{
+			s_PanicMode = true;
 			fmt::print(fg(fmt::color::red), "[WndProc] Unknown Exception caught!\n");
 			DestroyWindow(hwnd);
-			::MessageBoxA(hwnd, "Unknown exception occurred.", "Unhandled Exception", MB_ICONERROR | MB_OK);
+			PostQuitMessage(0);
 		}
+
 
 	}
 

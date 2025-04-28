@@ -24,23 +24,27 @@ namespace Components {
 		Component& operator=(Component&&) = delete;
 
 		std::wstring GetLabel() const { return m_Label; }
-		void SetBounds(const D2D1_RECT_F& rect) {
+		void SetBounds(const D2D1_RECT_F& rect)
+		{
 			m_Rect = rect;
 			OnBoundsSet();
 		}
 
-		void SetBounds(float x, float y, float width, float height) {
+		void SetBounds(float x, float y, float width, float height)
+		{
 			m_Rect = D2D1::RectF(x, y, x + width, y + height);
 			OnBoundsSet();
 		}
 
-		bool IsBoundsSet() const {
+		bool IsBoundsSet() const
+		{
 			return !(m_Rect.left == -1.0f && m_Rect.top == -1.0f && m_Rect.right == -1.0f && m_Rect.bottom == -1.0f);
 		}
 
 		D2D_RECT_F GetBounds() const { return m_Rect; }
 
-		bool IsClickInBounds(float mouseX, float mouseY) const {
+		bool IsClickInBounds(float mouseX, float mouseY) const
+		{
 			return IsBoundsSet() && IsVisible() &&
 				mouseX >= m_Rect.left && mouseX <= m_Rect.right &&
 				mouseY >= m_Rect.top && mouseY <= m_Rect.bottom;
@@ -50,7 +54,8 @@ namespace Components {
 		void SetVisibility(bool isVisible) { m_Visible = isVisible; }
 		bool IsVisible() const { return m_Visible; }
 
-		virtual bool OnClick(float mouseX, float mouseY) {
+		virtual bool OnClick(float mouseX, float mouseY)
+		{
 			return IsVisible() && IsClickInBounds(mouseX, mouseY);
 		}
 
@@ -58,14 +63,16 @@ namespace Components {
 		int GetIndex() const { return m_Index; }
 		GUID GetGuid() const { return m_Id; }
 
-		std::string GetGuidAsString() const {
+		std::string GetGuidAsString() const
+		{
 			return m_GuidString;
 		}
 
 		void AddUpdateDrawProperties(ID2D1HwndRenderTarget* renderTarget,
 			ID2D1SolidColorBrush* brush,
 			ID2D1SolidColorBrush* textBrush,
-			IDWriteTextFormat* textFormat) {
+			IDWriteTextFormat* textFormat)
+		{
 
 			if (!m_DrawProperties) {
 				m_DrawProperties = new DrawProperties{
@@ -80,12 +87,14 @@ namespace Components {
 			}
 		}
 
-		void AddUpdateDrawProperties(DrawProperties* drawProperties) {
+		void AddUpdateDrawProperties(DrawProperties* drawProperties)
+		{
 			m_DrawProperties = drawProperties;
 		}
 
 		bool IsDrawPropertiesSet() const { return m_DrawProperties != nullptr; }
-		void SafeDraw() {
+		void SafeDraw()
+		{
 			if (!IsDrawPropertiesSet())
 				return;
 			Draw();
@@ -98,12 +107,12 @@ namespace Components {
 		Component(const std::wstring& label, DrawProperties* drawProps, bool visible)
 			: m_Label(label), m_Visible(visible)
 		{
-			static DrawProperties tempProps;
-			tempProps.RenderTarget = drawProps->RenderTarget;
-			tempProps.Brush = drawProps->Brush;
-			tempProps.TextBrush = drawProps->TextBrush;
-			tempProps.TextFormat = drawProps->TextFormat;
-			m_DrawProperties = &tempProps;
+			m_DrawProperties = new DrawProperties{
+				drawProps->RenderTarget,
+				drawProps->Brush,
+				drawProps->TextBrush,
+				drawProps->TextFormat
+			};
 			Initialize();
 		}
 

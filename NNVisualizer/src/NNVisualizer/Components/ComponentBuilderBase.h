@@ -15,7 +15,7 @@ namespace Components {
 		}
 
 		TBuilder& AddDrawProperties(DrawProperties* drawProps) {
-			//m_DrawProps = drawProps;
+			m_DrawProps = drawProps;
 			return static_cast<TBuilder&>(*this);
 		}
 

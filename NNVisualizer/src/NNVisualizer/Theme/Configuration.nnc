@@ -1,29 +1,104 @@
 {
 	"Colors": {
 		"Node": {
-			"Default": {"r": 0.2, "g": 0.2, "b": 0.2, "a": 1.0},
-			"Active": {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0},
-			"Deactive": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 1.0}
+			"Default": {
+				"r": 0.2,
+				"g": 0.2,
+				"b": 0.2,
+				"a": 1.0
+			},
+			"Active": {
+				"r": 1.0,
+				"g": 0.0,
+				"b": 0.0,
+				"a": 1.0
+			},
+			"Deactive": {
+				"r": 0.0,
+				"g": 1.0,
+				"b": 0.0,
+				"a": 1.0
+			}
 		},
 		"Weights": {
-			"Default": {"r":0.2,"g":0.2,"b":0.2, "a":1.0},
-			"Loose": {"r":0.2, "g":1.0, "b":0.8, "a":1.0},
-			"Medium": {"r": 1.0, "g": 1.0, "b": 0.0, "a": 1.0},
-			"Tight": {"r": 1.0, "g": 0.2, "b": 0.2, "a": 1.0}
+			"Default": {
+				"r": 0.2,
+				"g": 0.2,
+				"b": 0.2,
+				"a": 1.0
+			},
+			"Loose": {
+				"r": 0.2,
+				"g": 1.0,
+				"b": 0.8,
+				"a": 1.0
+			},
+			"Medium": {
+				"r": 1.0,
+				"g": 1.0,
+				"b": 0.0,
+				"a": 1.0
+			},
+			"Tight": {
+				"r": 1.0,
+				"g": 0.2,
+				"b": 0.2,
+				"a": 1.0
+			}
 		},
-		"DefaultComponentTextBrush": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0},
-		"SelectedComponentTextBrush": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 1.0},
-		"DefaultComponentBorderBrush": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0},
-		"SelectedComponentBorderBrush": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 0.4},
-		"DefaultComponentBackgroundBrush": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 0.0},
-		"SelectedComponentBackgroundBrush": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 0.1},
-		"ErrorTextBrush": {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0},
-		"PropertyTextBrush": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 1.0}
+		"DefaultComponentTextBrush": {
+			"r": 0.0,
+			"g": 0.0,
+			"b": 0.0,
+			"a": 1.0
+		},
+		"SelectedComponentTextBrush": {
+			"r": 0.0,
+			"g": 1.0,
+			"b": 0.0,
+			"a": 1.0
+		},
+		"DefaultComponentBorderBrush": {
+			"r": 0.0,
+			"g": 0.0,
+			"b": 0.0,
+			"a": 1.0
+		},
+		"SelectedComponentBorderBrush": {
+			"r": 0.0,
+			"g": 1.0,
+			"b": 0.0,
+			"a": 0.4
+		},
+		"DefaultComponentBackgroundBrush": {
+			"r": 0.0,
+			"g": 0.0,
+			"b": 0.0,
+			"a": 0.0
+		},
+		"SelectedComponentBackgroundBrush": {
+			"r": 0.0,
+			"g": 1.0,
+			"b": 0.0,
+			"a": 0.1
+		},
+		"ErrorTextBrush": {
+			"r": 1.0,
+			"g": 0.0,
+			"b": 0.0,
+			"a": 1.0
+		},
+		"PropertyTextBrush": {
+			"r": 0.0,
+			"g": 1.0,
+			"b": 0.0,
+			"a": 1.0
+		}
 	},
 	"TextFormats": {
 		"Default": {
 			"Font": "Sans Serif",
-			"Size": 24.0,
+			"Size": 16.0,
 			"Weight": "Regular",
 			"Style": "Normal",
 			"Stretch": "Normal",
