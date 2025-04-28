@@ -155,48 +155,7 @@ namespace NNVisualizer {
 				&m_RenderTarget
 			);
 
-			nlohmann::json config = {
-				{"Colors", {
-					{"Node", {
-						{"Active", {{"r", 1.0}, {"g", 0.0}, {"b", 0.0}, {"a", 1.0}}},
-						{"Deactive", {{"r", 0.0}, {"g", 1.0}, {"b", 0.0}, {"a", 1.0}}}
-					}},
-					{"Weights", {
-						{"Medium", {{"r", 1.0}, {"g", 1.0}, {"b", 0.0}, {"a", 1.0}}}
-					}},
-					{"Text", {{"r", 1.0}, {"g", 1.0}, {"b", 1.0}, {"a", 1.0}}},
-					{"Gray", {{"r", 0.827}, {"g", 0.827}, {"b", 0.827}, {"a", 0.6}}},
-					{"Black", {{"r", 0.0}, {"g", 0.0}, {"b", 0.0}, {"a", 1.0}}},
-					{"LimeGreen", {{"r", 0.0}, {"g", 1.0}, {"b", 0.0}, {"a", 0.4}}}
-				}},
-				{"TextFormats", {
-					{"Default", {
-						{"Font", "Sans Serif"},
-						{"Size", 8.0},
-						{"Weight", "Regular"},
-						{"Style", "Normal"},
-						{"Stretch", "Normal"},
-						{"Locale", "en-us"}
-					}},
-					{"Error", {
-						{"Font", "Sans Serif"},
-						{"Size", 24.0},
-						{"Weight", "Regular"},
-						{"Style", "Normal"},
-						{"Stretch", "Normal"},
-						{"Locale", "en-us"}
-					}},
-					{"Menu", {
-						{"Font", "Sans Serif"},
-						{"Size", 16.0},
-						{"Weight", "Regular"},
-						{"Style", "Normal"},
-						{"Stretch", "Normal"},
-						{"Locale", "en-us"}
-					}}
-				}}
-			};
-			Components::ComponentFactory::InitializeBrushes(m_RenderTarget, config);
+			Components::ComponentFactory::InitializeBrushes(m_RenderTarget, "Theme/Configuration.nnc");
 
 			m_InitializeButton = Components::ComponentFactory::CreateAndRegisterButton(m_ComponentList, L"Initialize", true);
 			m_InitializeButton->SetFunction([this]() { return this->InitializeButtonFunc(); });
@@ -297,7 +256,7 @@ namespace NNVisualizer {
 							m_ViewportWidth,
 							m_ViewportHeight
 						),
-						Components::ComponentFactory::s_BlackBrush
+						Components::ComponentFactory::s_ErrorTextBrush
 					);
 				}
 				float componentWidth = 200.0f;
@@ -452,14 +411,14 @@ namespace NNVisualizer {
 
 	void Visualizer::DrawProperty(const std::wstring& text, D2D1_RECT_F& layoutRect, bool slideRect, bool drawBorder)
 	{
-		m_RenderTarget->DrawTextA(text.c_str(), static_cast<UINT32>(text.size()), Components::ComponentFactory::s_MenuTextFormat, layoutRect, Components::ComponentFactory::s_BlackBrush);
+		m_RenderTarget->DrawTextA(text.c_str(), static_cast<UINT32>(text.size()), Components::ComponentFactory::s_MenuTextFormat, layoutRect, Components::ComponentFactory::s_PropertyTextBrush);
 		D2D1_RECT_F borderRect = D2D1::RectF(
 			layoutRect.left - 5,
 			layoutRect.top - 5,
 			layoutRect.right + 5,
 			layoutRect.bottom + 5
 		);
-		if (drawBorder) m_RenderTarget->DrawRectangle(borderRect, Components::ComponentFactory::s_BlackBrush);
+		if (drawBorder) m_RenderTarget->DrawRectangle(borderRect, Components::ComponentFactory::s_DefaultComponentBorderBrush);
 
 		if (slideRect)
 		{
@@ -473,18 +432,18 @@ namespace NNVisualizer {
 		using namespace Components;
 
 		// Varsayýlan fýrça: s_BlackBrush
-		ID2D1SolidColorBrush* brush = ComponentFactory::s_BlackBrush;
+		ID2D1SolidColorBrush* brush = ComponentFactory::s_DefaultNodeBrush;
 		if (isChoosen)
 		{
-			brush = ComponentFactory::s_BlackBrush;
+			brush = ComponentFactory::s_DefaultNodeBrush;
 		}
 		else if (isProcessing)
 		{
-			brush = ComponentFactory::s_LimeGreenBrush;
+			brush = ComponentFactory::s_ActiveNodeBrush;
 		}
 		else if ((m_ChoosenNeuronColRow.first != -1) && (m_ChoosenNeuronColRow.second != -1))
 		{
-			brush = ComponentFactory::s_GrayBrush;
+			brush = ComponentFactory::s_DeactiveNodeBrush;
 		}
 
 		// Güvenlik kontrolü: fýrça ve render target mevcut mu?
@@ -528,20 +487,20 @@ namespace NNVisualizer {
 		{
 			if (weight < 0.33)
 			{
-				brush = ComponentFactory::s_TextFieldBrush;
+				brush = ComponentFactory::s_LooseWeightBrush;
 			}
 			else if (weight < 0.66)
 			{
-				brush = ComponentFactory::s_DropdownBrush;
+				brush = ComponentFactory::s_MediumWeightBrush;
 			}
 			else
 			{
-				brush = ComponentFactory::s_ButtonBrush;
+				brush = ComponentFactory::s_TightWeightBrush;
 			}
 		}
 		else
 		{
-			brush = ComponentFactory::s_GrayBrush;
+			brush = ComponentFactory::s_DefaultWeightBrush;
 		}
 
 		if (!brush || !m_RenderTarget)
@@ -552,128 +511,144 @@ namespace NNVisualizer {
 
 	LRESULT CALLBACK Visualizer::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		LRESULT result = 0;
-		if (message == WM_CREATE)
-		{
-			LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
-			Visualizer* pVisualizer = (Visualizer*)pcs->lpCreateParams;
-			::SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pVisualizer));
-			result = 1;
-		}
-		else
-		{
-			Visualizer* pVisualizer = reinterpret_cast<Visualizer*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-			bool wasHandled = false;
-			POINT screenCursorPos;
-			GetCursorPos(&screenCursorPos);
-			POINT worldCursorPos = screenCursorPos;
-			ScreenToClient(hwnd, &worldCursorPos);
-			if (pVisualizer)
+		try {
+
+			LRESULT result = 0;
+			if (message == WM_CREATE)
 			{
-				switch (message)
+				LPCREATESTRUCT pcs = (LPCREATESTRUCT)lParam;
+				Visualizer* pVisualizer = (Visualizer*)pcs->lpCreateParams;
+				::SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pVisualizer));
+				result = 1;
+			}
+			else
+			{
+				Visualizer* pVisualizer = reinterpret_cast<Visualizer*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+				bool wasHandled = false;
+				POINT screenCursorPos;
+				GetCursorPos(&screenCursorPos);
+				POINT worldCursorPos = screenCursorPos;
+				ScreenToClient(hwnd, &worldCursorPos);
+				if (pVisualizer)
 				{
-				case WM_SIZE:
-				{
-					UINT width = LOWORD(lParam);
-					UINT height = HIWORD(lParam);
-					pVisualizer->OnResize(width, height);
-					result = 0;
-					wasHandled = true;
-					break;
-				}
-				case WM_MOUSEWHEEL:
-				{
-					int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-					if (delta > 0)
+					switch (message)
 					{
-						pVisualizer->ZoomIn(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
-					}
-					else
+					case WM_SIZE:
 					{
-						pVisualizer->ZoomOut(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
-					}
-
-					pVisualizer->UpdateTextFormat();
-					result = 0;
-					wasHandled = true;
-					break;
-				}
-				case WM_KEYDOWN:
-				{
-					wasHandled = pVisualizer->GetEventHandler()->HandleKeyStroke(pVisualizer->GetFocusedComponent(), message, wParam, lParam);
-					result = 0;
-					if (!wasHandled)
-						pVisualizer->HandleCameraMovementKeyStroke(wParam, 10.0f);
-					break;
-				}
-				case WM_LBUTTONDOWN:
-				{
-
-					std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
-
-					if (!pVisualizer->HandleMouseClick(worldCursorPos)) // None of the components is clicked
-					{
-						result = 0;
-						pVisualizer->SetFocusedComponent(nullptr);
-						wasHandled = true;
-						break;
-					}
-
-					if (pVisualizer->GetEventHandler()->HandleMouseClick(pVisualizer->GetFocusedComponent(), worldCursorPos))
-					{
+						UINT width = LOWORD(lParam);
+						UINT height = HIWORD(lParam);
+						pVisualizer->OnResize(width, height);
 						result = 0;
 						wasHandled = true;
 						break;
 					}
+					case WM_MOUSEWHEEL:
+					{
+						int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+						if (delta > 0)
+						{
+							pVisualizer->ZoomIn(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
+						}
+						else
+						{
+							pVisualizer->ZoomOut(static_cast<float>(worldCursorPos.x), static_cast<float>(worldCursorPos.y));
+						}
+
+						pVisualizer->UpdateTextFormat();
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+					case WM_KEYDOWN:
+					{
+						wasHandled = pVisualizer->GetEventHandler()->HandleKeyStroke(pVisualizer->GetFocusedComponent(), message, wParam, lParam);
+						result = 0;
+						if (!wasHandled)
+							pVisualizer->HandleCameraMovementKeyStroke(wParam, 10.0f);
+						break;
+					}
+					case WM_LBUTTONDOWN:
+					{
+
+						std::cout << screenCursorPos.x << " " << screenCursorPos.y << std::endl;
+
+						if (!pVisualizer->HandleMouseClick(worldCursorPos)) // None of the components is clicked
+						{
+							result = 0;
+							pVisualizer->SetFocusedComponent(nullptr);
+							wasHandled = true;
+							break;
+						}
+
+						if (pVisualizer->GetEventHandler()->HandleMouseClick(pVisualizer->GetFocusedComponent(), worldCursorPos))
+						{
+							result = 0;
+							wasHandled = true;
+							break;
+						}
 
 
-					result = 0;
-					wasHandled = true;
-					break;
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+					case WM_RBUTTONDOWN:
+					{
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+					case WM_MOUSEMOVE:
+					{
+						InvalidateRect(hwnd, NULL, FALSE);
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+					case WM_DISPLAYCHANGE:
+					{
+						InvalidateRect(hwnd, NULL, FALSE);
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+					case WM_PAINT:
+					{
+						pVisualizer->OnRender();
+						InvalidateRect(hwnd, NULL, FALSE);
+						result = 0;
+						wasHandled = true;
+						break;
+					}
+					case WM_DESTROY:
+					{
+						PostQuitMessage(0);
+						result = 1;
+						wasHandled = true;
+						break;
+					}
+					}
 				}
-				case WM_RBUTTONDOWN:
+				if (!wasHandled)
 				{
-					result = 0;
-					wasHandled = true;
-					break;
-				}
-				case WM_MOUSEMOVE:
-				{
-					InvalidateRect(hwnd, NULL, FALSE);
-					result = 0;
-					wasHandled = true;
-					break;
-				}
-				case WM_DISPLAYCHANGE:
-				{
-					InvalidateRect(hwnd, NULL, FALSE);
-					result = 0;
-					wasHandled = true;
-					break;
-				}
-				case WM_PAINT:
-				{
-					pVisualizer->OnRender();
-					InvalidateRect(hwnd, NULL, FALSE);
-					result = 0;
-					wasHandled = true;
-					break;
-				}
-				case WM_DESTROY:
-				{
-					PostQuitMessage(0);
-					result = 1;
-					wasHandled = true;
-					break;
-				}
+					result = DefWindowProc(hwnd, message, wParam, lParam);
 				}
 			}
-			if (!wasHandled)
-			{
-				result = DefWindowProc(hwnd, message, wParam, lParam);
-			}
+			return result;
 		}
-		return result;
+		catch (const std::exception& e)
+		{
+			fmt::print(fg(fmt::color::red), "[WndProc] Unhandled Exception: {}\n", e.what());
+			DestroyWindow(hwnd);
+			::MessageBoxA(hwnd, e.what(), "Unhandled Exception", MB_ICONERROR | MB_OK);
+		}
+		catch (...)
+		{
+			fmt::print(fg(fmt::color::red), "[WndProc] Unknown Exception caught!\n");
+			DestroyWindow(hwnd);
+			::MessageBoxA(hwnd, "Unknown exception occurred.", "Unhandled Exception", MB_ICONERROR | MB_OK);
+		}
+
 	}
 
 	bool Visualizer::HandleCameraMovementKeyStroke(WPARAM wParam, float distance)
@@ -862,8 +837,8 @@ namespace NNVisualizer {
 		{
 			textField->AddUpdateDrawProperties(
 				ComponentFactory::s_RenderTarget,
-				ComponentFactory::s_LimeGreenBrush,
-				ComponentFactory::s_BlackBrush,
+				ComponentFactory::s_SelectedComponentBorderBrush,
+				ComponentFactory::s_SelectedComponentTextBrush,
 				ComponentFactory::s_TextFormat
 			);
 		}
@@ -871,8 +846,8 @@ namespace NNVisualizer {
 		{
 			textField->AddUpdateDrawProperties(
 				ComponentFactory::s_RenderTarget,
-				ComponentFactory::s_TextFieldBrush,
-				ComponentFactory::s_TextBrush,
+				ComponentFactory::s_DefaultComponentBorderBrush,
+				ComponentFactory::s_DefaultComponentTextBrush,
 				ComponentFactory::s_TextFormat
 			);
 		}
@@ -896,8 +871,8 @@ namespace NNVisualizer {
 		{
 			textField->AddUpdateDrawProperties(
 				ComponentFactory::s_RenderTarget,
-				ComponentFactory::s_LimeGreenBrush,
-				ComponentFactory::s_BlackBrush,
+				ComponentFactory::s_SelectedComponentBorderBrush,
+				ComponentFactory::s_SelectedComponentTextBrush,
 				ComponentFactory::s_TextFormat
 			);
 		}
@@ -905,8 +880,8 @@ namespace NNVisualizer {
 		{
 			textField->AddUpdateDrawProperties(
 				ComponentFactory::s_RenderTarget,
-				ComponentFactory::s_TextFieldBrush,
-				ComponentFactory::s_TextBrush,
+				ComponentFactory::s_DefaultComponentBorderBrush,
+				ComponentFactory::s_DefaultComponentTextBrush,
 				ComponentFactory::s_TextFormat
 			);
 		}
@@ -930,16 +905,6 @@ namespace NNVisualizer {
 	{
 		SafeRelease(&m_RenderTarget);
 		SafeRelease(&m_DWriteFactory);
-		//SafeRelease(&m_TextFormat);
-		//SafeRelease(&m_MenuTextFormat);
-		//SafeRelease(&m_ErrorTextFormat);
-		//SafeRelease(&m_LooseWeightBrush);
-		//SafeRelease(&m_MediumWeightBrush);
-		//SafeRelease(&m_TightWeightBrush);
-		//SafeRelease(&m_GrayBrush);
-		//SafeRelease(&m_BlackBrush);
-		//SafeRelease(&m_WhiteBrush);
-		//SafeRelease(&m_LimeGreenBrush);
 		Components::ComponentFactory::ReleaseResources();
 	}
 

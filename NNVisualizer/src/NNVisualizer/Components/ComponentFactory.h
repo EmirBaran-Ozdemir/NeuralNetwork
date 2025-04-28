@@ -5,6 +5,7 @@
 #include <d2d1.h>
 #include <dwrite.h>
 #include <nlohmann/json.hpp>
+#include <fstream>
 #include "ButtonBuilder.h"
 #include "TextFieldBuilder.h"
 #include "DropdownBuilder.h"
@@ -12,19 +13,36 @@
 namespace Components {
 	class ComponentFactory {
 	public:
-		static ID2D1SolidColorBrush* s_ButtonBrush;
-		static ID2D1SolidColorBrush* s_TextFieldBrush;
-		static ID2D1SolidColorBrush* s_DropdownBrush;
-		static ID2D1SolidColorBrush* s_TextBrush;
-		static ID2D1SolidColorBrush* s_GrayBrush;
-		static ID2D1SolidColorBrush* s_BlackBrush;
-		static ID2D1SolidColorBrush* s_LimeGreenBrush;
+		//! Node brushes
+		static ID2D1SolidColorBrush* s_DefaultNodeBrush;
+		static ID2D1SolidColorBrush* s_ActiveNodeBrush;
+		static ID2D1SolidColorBrush* s_DeactiveNodeBrush;
+
+		//! Weight brushes
+		static ID2D1SolidColorBrush* s_DefaultWeightBrush;
+		static ID2D1SolidColorBrush* s_LooseWeightBrush;
+		static ID2D1SolidColorBrush* s_MediumWeightBrush;
+		static ID2D1SolidColorBrush* s_TightWeightBrush;
+
+		//! Component Brushes
+		static ID2D1SolidColorBrush* s_DefaultComponentTextBrush;
+		static ID2D1SolidColorBrush* s_SelectedComponentTextBrush;
+		static ID2D1SolidColorBrush* s_DefaultComponentBorderBrush;
+		static ID2D1SolidColorBrush* s_SelectedComponentBorderBrush;
+		static ID2D1SolidColorBrush* s_DefaultComponentBackgroundBrush;
+		static ID2D1SolidColorBrush* s_SelectedComponentBackgroundBrush;
+
+		//! Display element brushes
+		static ID2D1SolidColorBrush* s_ErrorTextBrush;
+		static ID2D1SolidColorBrush* s_PropertyTextBrush;
+
 		static IDWriteTextFormat* s_TextFormat;
 		static IDWriteTextFormat* s_ErrorTextFormat;
 		static IDWriteTextFormat* s_MenuTextFormat;
+
 		static ID2D1HwndRenderTarget* s_RenderTarget;
 
-		static void InitializeBrushes(ID2D1HwndRenderTarget* renderTarget, const nlohmann::json& config);
+		static void InitializeBrushes(ID2D1HwndRenderTarget* renderTarget, const std::string& configFilePath);
 		static void ReleaseResources();
 
 		static ButtonBuilder CreateButtonBuilder();
